@@ -15,7 +15,7 @@ VERSION = '1.0.0'
 ISRELEASED = True
 
 DESCRIPTION = 'Wavepy Tools'
-README_FILE = os.path.join(os.path.dirname(__file__), 'README.rst')
+README_FILE = os.path.join(os.path.dirname(__file__), 'README.md')
 LONG_DESCRIPTION = open(README_FILE).read()
 AUTHOR = 'Walan Grizolli'
 AUTHOR_EMAIL = 'wcgrizolli@anl.gov'
