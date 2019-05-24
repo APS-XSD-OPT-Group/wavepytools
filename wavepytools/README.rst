@@ -42,13 +42,13 @@ https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
 
 After install anaconda, install wavepy
 
->>./anaconda3/bin/python3.7 -m pip install wavepy
+>>~/anaconda3/bin/python3.7 -m pip install wavepy
 
-Install xraylib
+Install xraylib:
 
->>>./anaconda3/bin/conda install -c conda-forge xraylib=3.3.0
+>>>~/anaconda3/bin/conda install -c conda-forge xraylib=3.3.0
 
-Matplotlib
+Matplotlib version:
 
 The current running version is 3.0.3
 
