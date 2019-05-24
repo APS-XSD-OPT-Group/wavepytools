@@ -118,19 +118,25 @@ zvec_from = easyqt.get_choice(message='z distances is calculated or from table?'
 if zvec_from == 'Calculated':
 
     startDist = easyqt.get_float('Starting distance scan [mm]',
+                                 title='Title',
                                  default_value=8)*1e-3
 
     step_z_scan = easyqt.get_float('Step size scan [mm]',
+                                   title='Title',
                                    default_value=4)*1e-3
 
-    image_per_point = easyqt.get_int('Number of images by step', default_value=1)
+    image_per_point = easyqt.get_int('Number of images by step',
+                                     title='Title',
+                                     default_value=1)
 
     zvec = np.linspace(startDist,
                        startDist + step_z_scan*(nfiles/image_per_point-1),
                        nfiles/image_per_point)
     zvec = zvec.repeat(image_per_point)
 
-    strideFile = easyqt.get_int('Stride (Use only every XX files)', default_value=1)
+    strideFile = easyqt.get_int('Stride (Use only every XX files)',
+                                title='Title',
+                                default_value=1)
     listOfDataFiles = listOfDataFiles[0::strideFile]
     zvec = zvec[0::strideFile]
 
@@ -168,11 +174,11 @@ pattern = easyqt.get_choice(message='Select CB Grating Pattern',
 #                            choices=['Edge', 'Diagonal'])
 
 sourceDistanceV = easyqt.get_float("Enter Distance to Source\n in the VERTICAL [m]",
-                                   title='Experimental Values', max_=99999,
+                                   title='Experimental Values',
                                    default_value=1.6)
 
 sourceDistanceH = easyqt.get_float("Enter Distance to Source\n in the Horizontal [m]",
-                                   title='Experimental Values', max_=99999,
+                                   title='Experimental Values',
                                    default_value=30.0)
 
 unFilterSize = easyqt.get_int("Enter Size for Uniform Filter [Pixels]\n" +
