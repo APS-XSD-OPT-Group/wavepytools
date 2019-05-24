@@ -1,16 +1,11 @@
 ===================
-**pythonWorkspace**
+**wavepytools**
 ===================
 
-`pythonWorkspace <https://gitlab.com/wcgrizolli/pythonWorkspace>`_ is the
-working directory of Walan Grizolli.
+`wavepytools <https://github.com/APS-XSD-OPT-Group/wavepytools>`_ contains scripts to run wavepy.
 
 It is not complete, only scripts that are desired to have syncronized in
 several machines. Files with data are not tracked.
-
-
-**Link:** https://gitlab.com/wcgrizolli/pythonWorkspace
-
 
 
 ---------------------
@@ -23,9 +18,7 @@ several machines. Files with data are not tracked.
 **Clone**
 ----------
 
->>> git clone https://gitlab.com/wcgrizolli/pythonWorkspace.git
-
-.. NOTE:: This is a private project. Your need to have a user at gitlab.com and to be added to the project to have access.
+>>> git clone https://github.com/APS-XSD-OPT-Group/wavepytools.git
 
 
 **Update your local installation**
@@ -40,65 +33,27 @@ several machines. Files with data are not tracked.
 >>> git config credential.helper store
 
 
-
-
 -----------------------------------
 **Solving dependencies with conda**
 -----------------------------------
 
-.. NOTE:: You need to have ``anaconda`` or ``miniconda`` installed
+.. NOTE:: You need to have ``anaconda`` installed
+https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
 
+After install anaconda, install wavepy
 
-**Creating conda enviroment**
-------------------------------
+>>./anaconda3/bin/python3.7 -m pip install wavepy
 
->>> conda create -n ENV_NAME python=3.5 numpy=1.11  scipy=0.17 matplotlib=1.5 spyder=2.3.9 --yes
+Install xraylib
 
-.. WARNING:: edit ``ENV_NAME``
+>>>./anaconda3/bin/conda install -c conda-forge xraylib=3.3.0
 
+Matplotlib
+The current running version is 3.0.3
 
-
-**Solving dependencies**
-------------------------------
-
-
-Activate the enviroment:
-
->>> source activate ENV_NAME
-
-
-.. WARNING:: edit ``ENV_NAME``
-
-
->>> conda install scikit-image=0.12 --yes
->>> conda install -c dgursoy dxchange --yes
-
->>> pip install cffi
->>> pip install unwrap
->>> pip install tqdm
->>> pip install termcolor
->>> pip install easygui_qt
-
-.. NOTE:: ``unwrap`` needs ``cffi``, ``tqdm`` is used for progress bar
-
-
-
-**Adding Recomended packages**
-------------------------------
-
->>> conda install -c dgursoy xraylib
-
-
-
-
-**Additional Settings**
+**To run scripts in wavepytools**
 -----------------------
+For example
 
-``easygui_qt`` conflicts with the Qt backend of
-``matplotlib``. The workaround 
-is to change the backend to TkAgg. This can be in the *matplotlibrc* file 
-(instructions
-`here <http://matplotlib.org/users/customizing.html#customizing-matplotlib>`_).
-In Spyder this is done in **Tools->Preferences->Console->External Modules**,
-where we set **GUI backend** to
-**TkAgg**
+~/anaconda3/bin/python3.7 ~/wavepytools/wavepytools/imaging/single_grating/singleCheckerboardGratingTalbot_easyqt4.py
+
