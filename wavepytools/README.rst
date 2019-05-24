@@ -48,9 +48,7 @@ Install xraylib:
 
 >>>~/anaconda3/bin/conda install -c conda-forge xraylib=3.3.0
 
-Matplotlib version:
-
-The current running version is 3.0.3
+Running matplotlib version: 3.0.3
 
 **To run scripts in wavepytools**
 -----------------------
