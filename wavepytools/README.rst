@@ -49,11 +49,12 @@ Install xraylib
 >>>./anaconda3/bin/conda install -c conda-forge xraylib=3.3.0
 
 Matplotlib
+
 The current running version is 3.0.3
 
 **To run scripts in wavepytools**
 -----------------------
 For example
 
-~/anaconda3/bin/python3.7 ~/wavepytools/wavepytools/imaging/single_grating/singleCheckerboardGratingTalbot_easyqt4.py
+>>>~/anaconda3/bin/python3.7 ~/wavepytools/wavepytools/imaging/single_grating/singleCheckerboardGratingTalbot_easyqt4.py
 
