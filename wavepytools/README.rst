@@ -51,6 +51,7 @@ Install xraylib:
 Running matplotlib version: 3.0.3
 
 >>~/anaconda3/bin/python3.7 -m pip uninstall matplotlib
+
 >>~/anaconda3/bin/python3.7 -m pip install matplotlib==3.0.3
 
 **To run scripts in wavepytools**
