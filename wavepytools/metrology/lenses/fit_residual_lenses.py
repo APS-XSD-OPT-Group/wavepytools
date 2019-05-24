@@ -833,6 +833,7 @@ def _intial_gui_setup():
                                  '2D Lens Stigmatic Lens']
 
     lensGeometry = easyqt.get_choice(message='Lens Geometry',
+                                     title='Input Parameter',
                                      choices=menu_choices4lensmode)
 
     nominalRadius = easyqt.get_float('Nominal Curvature Radius' +
