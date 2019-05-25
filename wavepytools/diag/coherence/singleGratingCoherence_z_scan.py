@@ -308,6 +308,10 @@ def _func(i):
     img = dxchange.read_tiff(listOfDataFiles[i])
 
     darkMeanValue = np.mean(wpu.crop_matrix_at_indexes(img, idx4cropDark))
+
+    #TODO xshi, need to add option of input one value
+
+
     img = img - darkMeanValue  # calculate and remove dark
     img = wpu.crop_matrix_at_indexes(img, idx4crop)
 
