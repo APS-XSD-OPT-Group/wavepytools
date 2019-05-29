@@ -61,25 +61,23 @@ import numpy as np
 plotFourierImages = False
 
 if plotFourierImages:
-
     import matplotlib
     matplotlib.use('Agg')
 
-
 import matplotlib.pyplot as plt
-
 import glob
-
 import wavepy.utils as wpu
 import wavepy.grating_interferometry as wgi
 
-from multiprocessing import Pool, cpu_count
-import time
+#from multiprocessing import Pool, cpu_count
+#import time
 
 import os
 from wavepy.utils import easyqt
 
-
+# =============================================================================
+# %% Function for multiprocessing
+# =============================================================================
 
 def _func(i):
 
@@ -123,13 +121,15 @@ def _func(i):
                                    searchRegion=searchRegion,
                                    unFilterSize=unFilterSize)
 
+# =============================================================================
+# %% Script starts
+# =============================================================================
 
 wpu._mpl_settings_4_nice_graphs()
 
 # =============================================================================
 # %% Load Image
 # =============================================================================
-
 
 originalDir = os.getcwd()
 
@@ -194,9 +194,7 @@ else:
     listOfDataFiles = listOfDataFiles[::-1]
     zvec = zvec[::-1]
 
-
 img = dxchange.read_tiff(listOfDataFiles[0])
-
 
 # =============================================================================
 # %% Experimental parameters
@@ -242,7 +240,6 @@ os.chdir(originalDir)
 
 idx4crop = [0, -1, 0, -1]
 
-
 [colorlimit,
  cmap] = wpu.plot_slide_colorbar(img,
                                  title='SELECT COLOR SCALE,\n' +
@@ -259,6 +256,8 @@ idx4crop = wpu.graphical_roi_idx(img, verbose=True,
 
 wpu.print_blue("MESSAGE: idx for cropping")
 wpu.print_blue(idx4crop)
+
+img = wpu.crop_matrix_at_indexes(img, idx4crop)
 
 # =============================================================================
 # %% Dark indexes
@@ -279,8 +278,6 @@ else:
     idx4cropDark = [0, 100, 0, 100]
 
 # dark_im = dxchange.read_tiff(listOfDataFiles[0])*0.0 + avgDark
-
-img = wpu.crop_matrix_at_indexes(img, idx4crop)
 
 # ==============================================================================
 # %% Harmonic Periods
@@ -336,9 +333,6 @@ wpu.log_this('Search Region : {:d}'.format(searchRegion))
 # %% Calculate everything
 # =============================================================================
 
-# =============================================================================
-# %% Function for multiprocessing
-# =============================================================================
 
 # =============================================================================
 # %% multiprocessing
