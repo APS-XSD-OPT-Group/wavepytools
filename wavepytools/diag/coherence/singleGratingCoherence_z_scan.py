@@ -66,8 +66,6 @@ if plotFourierImages:
     matplotlib.use('Agg')
 
 
-import matplotlib
-
 import matplotlib.pyplot as plt
 
 import glob
@@ -80,6 +78,51 @@ import time
 
 import os
 from wavepy.utils import easyqt
+
+
+
+def _func(i):
+
+    wpu.print_blue("MESSAGE: loop " + str(i) + ": " +
+                   listOfDataFiles[i])
+
+    img = dxchange.read_tiff(listOfDataFiles[i])
+
+    darkMeanValue = np.mean(wpu.crop_matrix_at_indexes(img, idx4cropDark))
+
+    #TODO xshi, need to add option of input one value
+
+
+    img = img - darkMeanValue  # calculate and remove dark
+    img = wpu.crop_matrix_at_indexes(img, idx4crop)
+
+    pv = int(period_harm_Vert /
+             (sourceDistanceV + zvec[i])*(sourceDistanceV+np.min(zvec)))
+    ph = int(period_harm_Horz /
+             (sourceDistanceH + zvec[i])*(sourceDistanceH+np.min(zvec)))
+
+    if plotFourierImages:
+
+        wgi.plot_harmonic_grid(img,
+                               [pv, ph],
+                               isFFT=False)
+
+        plt.savefig('FFT_{:.0f}mm.png'.format(zvec[i]*1e3))
+        plt.show(block=False)
+        plt.close()
+
+        wgi.plot_harmonic_peak(img,
+                               [pv, ph],
+                               isFFT=False)
+
+        plt.savefig('FFT_peaks_{:.0f}mm.png'.format(zvec[i]*1e3))
+        plt.show(block=False)
+        plt.close()
+
+    return wgi.visib_1st_harmonics(img, [pv, ph],
+                                   searchRegion=searchRegion,
+                                   unFilterSize=unFilterSize)
+
 
 wpu._mpl_settings_4_nice_graphs()
 
@@ -119,11 +162,11 @@ if zvec_from == 'Calculated':
 
     startDist = easyqt.get_float('Starting distance scan [mm]',
                                  title='Title',
-                                 default_value=8)*1e-3
+                                 default_value=10)*1e-3
 
     step_z_scan = easyqt.get_float('Step size scan [mm]',
                                    title='Title',
-                                   default_value=4)*1e-3
+                                   default_value=2)*1e-3
 
     image_per_point = easyqt.get_int('Number of images by step',
                                      title='Title',
@@ -131,7 +174,7 @@ if zvec_from == 'Calculated':
 
     zvec = np.linspace(startDist,
                        startDist + step_z_scan*(nfiles/image_per_point-1),
-                       nfiles/image_per_point)
+                       int(nfiles/image_per_point))
     zvec = zvec.repeat(image_per_point)
 
     strideFile = easyqt.get_int('Stride (Use only every XX files)',
@@ -170,16 +213,16 @@ gratingPeriod = easyqt.get_float("Enter CB Grating Period [um]",
 
 pattern = easyqt.get_choice(message='Select CB Grating Pattern',
                             title='Title',
-                            choices=['Diagonal', 'Edge'])
-#                            choices=['Edge', 'Diagonal'])
+ #                           choices=['Diagonal', 'Edge'])
+                            choices=['Edge', 'Diagonal'])
 
 sourceDistanceV = easyqt.get_float("Enter Distance to Source\n in the VERTICAL [m]",
                                    title='Experimental Values',
-                                   default_value=1.6)
+                                   default_value=34.0)
 
 sourceDistanceH = easyqt.get_float("Enter Distance to Source\n in the Horizontal [m]",
                                    title='Experimental Values',
-                                   default_value=30.0)
+                                   default_value=34.0)
 
 unFilterSize = easyqt.get_int("Enter Size for Uniform Filter [Pixels]\n" +
                               "    (Enter 1 to NOT use the filter)",
@@ -239,7 +282,6 @@ else:
 
 img = wpu.crop_matrix_at_indexes(img, idx4crop)
 
-
 # ==============================================================================
 # %% Harmonic Periods
 # ==============================================================================
@@ -265,7 +307,6 @@ elif pattern == 'Edge':
                                          harmonic_ij=['0', '1'],
                                          searchRegion=40,
                                          isFFT=False, verbose=True)
-
 
 wpu.log_this('Input files: ' + samplefileName.rsplit('_', 1)[0] + '*.tif',
              preffname=fname2save)
@@ -299,56 +340,13 @@ wpu.log_this('Search Region : {:d}'.format(searchRegion))
 # %% Function for multiprocessing
 # =============================================================================
 
-
-def _func(i):
-
-    wpu.print_blue("MESSAGE: loop " + str(i) + ": " +
-                   listOfDataFiles[i])
-
-    img = dxchange.read_tiff(listOfDataFiles[i])
-
-    darkMeanValue = np.mean(wpu.crop_matrix_at_indexes(img, idx4cropDark))
-
-    #TODO xshi, need to add option of input one value
-
-
-    img = img - darkMeanValue  # calculate and remove dark
-    img = wpu.crop_matrix_at_indexes(img, idx4crop)
-
-    pv = int(period_harm_Vert /
-             (sourceDistanceV + zvec[i])*(sourceDistanceV+np.min(zvec)))
-    ph = int(period_harm_Horz /
-             (sourceDistanceH + zvec[i])*(sourceDistanceH+np.min(zvec)))
-
-    if plotFourierImages:
-
-        wgi.plot_harmonic_grid(img,
-                               [pv, ph],
-                               isFFT=False)
-
-        plt.savefig('FFT_{:.0f}mm.png'.format(zvec[i]*1e3))
-        plt.show(block=False)
-        plt.close()
-
-        wgi.plot_harmonic_peak(img,
-                               [pv, ph],
-                               isFFT=False)
-
-        plt.savefig('FFT_peaks_{:.0f}mm.png'.format(zvec[i]*1e3))
-        plt.show(block=False)
-        plt.close()
-
-    return wgi.visib_1st_harmonics(img, [pv, ph],
-                                   searchRegion=searchRegion,
-                                   unFilterSize=unFilterSize)
-
 # =============================================================================
 # %% multiprocessing
 # =============================================================================
-
+'''
 ncpus = cpu_count()
-wpu.print_blue("MESSAGE: %d cpu's available" % ncpus)
 
+wpu.print_blue("MESSAGE: %d cpu's available" % ncpus)
 
 tzero = time.time()
 
@@ -357,7 +355,11 @@ res = p.map(_func, range(len(listOfDataFiles)))
 p.close()
 
 wpu.print_blue('MESSAGE: Time spent: {0:.3f} s'.format(time.time() - tzero))
+'''
 
+res = []
+for i in range(len(listOfDataFiles)):
+    res.append(_func(i))
 
 # =============================================================================
 # %% Sorting the data
@@ -373,7 +375,6 @@ ph = np.asarray([x[4] for x in res])
 
 pattern_period_Vert_z = pixelSize/(pv[:, 0] - p0[:, 0])*img.shape[0]
 pattern_period_Horz_z = pixelSize/(ph[:, 1] - p0[:, 1])*img.shape[1]
-
 
 # =============================================================================
 # %% Save csv file
