@@ -83,7 +83,9 @@ from wavepy.utils import easyqt
 # %% Function for multiprocessing
 # =============================================================================
 
-def _func(i):
+def _func(parameters):
+
+    i, listOfDataFiles, zvec, idx4cropDark, idx4crop, period_harm_Vert, sourceDistanceV, period_harm_Horz, sourceDistanceH, searchRegion, unFilterSize = parameters
 
     wpu.print_blue("MESSAGE: loop " + str(i) + ": " +
                    listOfDataFiles[i])
@@ -350,7 +352,14 @@ def main():
     tzero = time.time()
 
     p = Pool(ncpus-1)
-    res = p.map(_func, range(len(listOfDataFiles)))
+
+    indexes = range(len(listOfDataFiles))
+    parameters = []
+
+    for i in indexes:
+        parameters.append([i, listOfDataFiles, zvec, idx4cropDark, idx4crop, period_harm_Vert, sourceDistanceV, period_harm_Horz, sourceDistanceH, searchRegion, unFilterSize])
+
+    res = p.map(_func, parameters)
     p.close()
 
     wpu.print_blue('MESSAGE: Time spent: {0:.3f} s'.format(time.time() - tzero))
@@ -422,7 +431,7 @@ def main():
     # =============================================================================
     # %% Plot Harmonic position and calculate source distance
     # =============================================================================
-    from fit_singleGratingCoherence_z_scan import fit_period_vs_z
+    from wavepytools.diag.coherence.fit_singleGratingCoherence_z_scan import fit_period_vs_z
 
     (sourceDistance_from_fit_V,
      patternPeriodFromData_V) = fit_period_vs_z(zvec, pattern_period_Vert_z,
