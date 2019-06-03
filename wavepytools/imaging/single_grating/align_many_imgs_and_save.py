@@ -160,7 +160,7 @@ def align_many_imgs_linearshifts(samplefileName,
 # %%
 
 
-inifname = '/home/grizolli/workspace/pythonWorkspace/imaging/single_grating/.align_many_imgs_and_save.ini'
+inifname = '.align_many_imgs_and_save.ini'
 
 # %%
 idx4crop = list(map(int, (wpu.get_from_ini_file(inifname, 'Parameters',
@@ -181,12 +181,13 @@ if len(sys.argv) == 1:
         wpu.set_at_ini_file(inifname, 'Files', 'reference', samplefileName)
 
     optionRef = easyqt.get_choice('Align images to reference ot to previous image?',
+                                  title='Title',
                                   choices=['Reference', 'Previous', 'Manual'])
 
     fixRef = (optionRef == 'Reference')
 
     if optionRef!='Manual':
-        option = easyqt.get_choice('Crop or Pad?', choices=['Pad', 'Crop'])
+        option = easyqt.get_choice('Crop or Pad?', title='Title', choices=['Pad', 'Crop'])
 else:
     samplefileName = sys.argv[1]
     option = sys.argv[2]
@@ -199,10 +200,8 @@ displayPlots = False
 
 if optionRef == 'Manual':
 
-    totalShift_i = easyqt.get_int('Total Vertical Shift', default_value=0,
-                                  min_=-5000, max_=5000)
-    totalShift_j = easyqt.get_int('Total Horizontal Shift', default_value=0,
-                                  min_=-5000, max_=5000)
+    totalShift_i = easyqt.get_int('Total Vertical Shift', title='Title', default_value=0)
+    totalShift_j = easyqt.get_int('Total Horizontal Shift', title='Title', default_value=0)
 
     _, allShifts = align_many_imgs_linearshifts(samplefileName,
                                                 totalShift=[-totalShift_i,
