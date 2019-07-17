@@ -38,7 +38,7 @@ profilenumber = 4
 # %%
 
 if len(sys.argv) == 1:
-    dirName = easyqt.get_directory_name()
+    dirName = easyqt.get_directory_name(title='Select folder contains RF')
 else:
     dirName = sys.argv[1]
 
@@ -104,7 +104,7 @@ if len(sys.argv) > 2 or easyqt.get_yes_or_no('Do you want to load a target file?
     if len(sys.argv) > 2:
         targetName = sys.argv[2]
     else:
-        targetName = easyqt.get_file_names()
+        targetName = easyqt.get_file_names(title='select target CSV')
 
     if targetName == []:
         targetName = defaults['Files'].get('target file')
