@@ -54,6 +54,7 @@ Author: Walan Grizolli
 import sys
 import os
 
+
 if len(sys.argv) != 1: # if command line, dont show the plots
     import matplotlib
     matplotlib.use('Agg')
