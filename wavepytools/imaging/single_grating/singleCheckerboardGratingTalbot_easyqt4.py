@@ -987,7 +987,7 @@ def fit_radius_dpc(dpx, dpy, pixelsize, kwave,
     ax1.legend(loc=0, fontsize='small')
     ax1.set_title('Curvature Radius of WF {:.3g} m'.format(curvrad_x),
                   fontsize=16)
-    ax1.set_adjustable('box-forced')
+    ax1.set_adjustable('box')
 
     ax2.plot(yVec*1e6, dpy[:, dpy.shape[1]//4],
              '-ob', label='1/4')
@@ -1011,7 +1011,7 @@ def fit_radius_dpc(dpx, dpy, pixelsize, kwave,
     ax2.legend(loc=0, fontsize='small')
     ax2.set_title('Curvature Radius of WF {:.3g} m'.format(curvrad_y),
                   fontsize=16)
-    ax2.set_adjustable('box-forced')
+    ax2.set_adjustable('box')
 
     if saveFigFlag:
         wpu.save_figs_with_idx(saveFileSuf, extension='png')
