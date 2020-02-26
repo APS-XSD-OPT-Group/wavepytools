@@ -66,7 +66,7 @@ img2 = dxchange.read_tiff(img2fname)
 
 
 # %% alignment 1
-img1_aligned, img2_aligned = wpu.gui_align_two_images(img1, img2, option='pad')
+img1_aligned, img2_aligned, pixel_shift = wpu.gui_align_two_images(img1, img2, option='pad')
 
 
 # save files

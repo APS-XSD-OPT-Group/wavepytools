@@ -72,7 +72,7 @@ import wavepy.grating_interferometry as wgi
 from wavepy.utils import easyqt
 
 import xraylib
-from dpc_profile_analysis import dpc_profile_analysis
+from dpc_profile_analysis_modi import dpc_profile_analysis
 
 rad2deg = np.rad2deg(1)
 deg2rad = np.deg2rad(1)
@@ -122,7 +122,7 @@ def main_single_gr_Talbot(img, imgRef,
          period_harm_Hor) = wgi.exp_harm_period(imgRef, [period_harm_Vert_o,
                                                 period_harm_Hor_o],
                                                 harmonic_ij=['0', '1'],
-                                                searchRegion=60,
+                                                searchRegion=30,
                                                 isFFT=False, verbose=True)
 
         wpu.print_blue('MESSAGE: Obtain harmonic 10 exprimentally')
@@ -131,11 +131,16 @@ def main_single_gr_Talbot(img, imgRef,
          _) = wgi.exp_harm_period(imgRef, [period_harm_Vert_o,
                                   period_harm_Hor_o],
                                   harmonic_ij=['1', '0'],
-                                  searchRegion=60,
+                                  searchRegion=30,
                                   isFFT=False, verbose=True)
+        '''
+            here is to use the fixed harmonic period or not
+        '''
+        # harmPeriod = [period_harm_Vert, period_harm_Hor]
+        # use fixed harmonic period
+        harmPeriod = [period_harm_Vert_o, period_harm_Hor_o]
 
-        harmPeriod = [period_harm_Vert, period_harm_Hor]
-
+    # print(period_harm_Vert,period_harm_Vert_o)
     # Calculate everything
 
     [int00, int01, int10,
@@ -432,8 +437,6 @@ def _load_experimental_pars(argv):
 
     global gui_mode
     global inifname  # name of .ini file
-    # here is to get the path to the ini file, which contains all the parameters
-    # the name of the ini file is supposed to be same with this python script
     inifname = os.curdir + '/.' + os.path.basename(__file__).replace('.py', '.ini')
 
     if len(argv) == 17:
@@ -572,7 +575,7 @@ def _load_experimental_pars(argv):
                       '/' + fname_img.rsplit('/', 1)[1].split('.')[0] + '_output/'
     else:
         saveFileSuf = fname_img.rsplit('/', 1)[1].split('.')[0] + '_output/'
-
+	
     if os.path.isdir(saveFileSuf):
         saveFileSuf = wpu.get_unique_filename(saveFileSuf, isFolder=True)
 
@@ -935,6 +938,9 @@ def doIntegration(diffPhase01, diffPhase10,
         idx4cropIntegration = ''
     else:
         idx4cropIntegration = [0, -1, 0, -1]
+
+    # # force to crop the integration figure
+    # idx4cropIntegration = [396, 2202, 303, 1863]
 
     phase = wgi.dpc_integration(diffPhase01, diffPhase10,
                                 virtual_pixelsize,
@@ -1603,6 +1609,7 @@ if __name__ == '__main__':
 
 
         wpu.print_blue('DONE')
+
 
 # %%
 

@@ -20,21 +20,79 @@ import glob
 
 from scipy.interpolate import interp1d
 
-
 def _gaussian_dist(x, sigma, xo):
 
     return 1/np.sqrt(2*np.pi)/sigma*np.exp(-(x-xo)**2/2/sigma**2)
 
+def load_cap_file(path_cap):
+    '''
+    Here use the cap to wavesensor data transfer function to generate the same structure
+    data file with the wavefront measurement curve. The file is generated in the dir_name path
+    '''
+
+    # Load data as numpy array
+    data = np.loadtxt(path_cap, delimiter=',', encoding='utf-8-sig', skiprows=1)
+    header = ['Height']
+    comments = []
+    return data, header, comments
+
+def cap_process(dir_name, data):
+    '''
+        read the cap data, then use the three data to get the response
+    '''
+    # here is the difference change
+    p1_diff = -50
+    p2_diff = 50
+
+    # read the data and use the three data to generate two difference data
+
+    data_p1 = (data[2][:, 1] - data[1][:, 1]) / p1_diff
+    data_p2 = (data[1][:, 1] - data[0][:, 1]) / p2_diff
+    data_combi = data[0:2]
+    # print(np.shape(data_combi))
+    data_combi[0][:, 1] = data_p1
+    data_combi[1][:, 1] = data_p2
+    # data_combi = [[data[0][:,0], data_p1], [data[0][:,0], data_p2]]
+
+    if isinstance(data_combi, list):
+
+        data2save = np.c_[data_combi[0], data_combi[1]]
+
+        if len(data_combi) >= 2:
+
+            for array in data_combi[2:]:
+                data2save = np.c_[data2save, array]
+
+    elif isinstance(data_combi, np.ndarray):
+        data2save = data_combi
+
+    np.savetxt(dir_name + '/response_diff.txt', data2save, fmt='%f', delimiter=',')
+
+    plt.figure(11)
+    plt.plot(data[0][:,0], data_p1, '-r', data[0][:,0], data_p2, '-b')
+    plt.show()
+
+    return data_combi
+
+
+
 wpu._mpl_settings_4_nice_graphs(otheroptions={'lines.linewidth': 2})
 
-voltage4response = 100.00
+# the path to the cap sensor data for response function
+path_cap = '/Users/zhiqiao/Documents/GitHub/wavepytools/wavepytools/imaging/single_grating/exp_data/response_test/cali'
+use_cap = True
+ref_p = [0, -50]
+# if the perfect wavefront is used as the target wavefront
+target_perfect = True
+
+voltage4response = 1.00
 
 
 phenergy = 1e20
 wavelength = wpu.hc/phenergy
 
 # here is to choose which collum in the csv fitting data is used for the response function calculation
-profilenumber = 4
+profilenumber = 1
 
 # %%
 
@@ -44,7 +102,7 @@ else:
     dirName = sys.argv[1]
 
 # here the response function initialization file
-inifname = '.response_function.ini'
+inifname = '.Revise_response_func.ini'
 defaults = wpu.load_ini_file(inifname)
 
 if dirName == '':
@@ -56,6 +114,12 @@ else:
                         'Folder with csv files', dirName)
 
 print(dirName)
+
+'''
+Here use the cap to wavesensor data transfer function to generate the same structure
+data file with the wavefront measurement curve. The file is generated in the dir_name path
+'''
+
 listOfFiles = glob.glob(dirName + '/*.csv')
 listOfFiles.sort()
 n_files = len(listOfFiles)
@@ -67,7 +131,10 @@ listOfShapes = []
 
 for fname in listOfFiles:
     wpu.print_blue('MESSAGE: Open File ' + fname)
-    fileContent = wpu.load_csv_file(fname)
+    if use_cap:
+        fileContent = load_cap_file(fname)
+    else:
+        fileContent = wpu.load_csv_file(fname)
     listOfArrays.append(fileContent[0])
 
     listOfShapes.append(np.shape(fileContent[0]))
@@ -79,6 +146,20 @@ headers = fileContent[1]
 for data, fname in zip(listOfArrays, listOfFiles):
     label = fname.rsplit('/', 1)[1].split('.')[0]
     print(label + ', rms value: {:.4f} nm'.format(np.std(data[:, profilenumber])*1e9))
+
+# here to process the cap sensor data to get the relative response
+if use_cap:
+    data_new = cap_process(dirName, listOfArrays)
+    listOfArrays = data_new
+    listOfShapes = []
+    for kk in range(len(listOfArrays)):
+        listOfShapes.append(np.shape(fileContent[0]))
+
+    # use the two differential data
+    n_files -= 1
+    print(listOfFiles)
+    del listOfFiles[2]
+
 
 # %% define what to do, use of ini file
 
@@ -107,6 +188,14 @@ if len(sys.argv) > 2 or easyqt.get_yes_or_no('Do you want to load a target file?
     else:
         targetName = easyqt.get_file_names('the target file directory:')
 
+        # use one image as the current state
+        if easyqt.get_yes_or_no('Do you want to load the refence file for target?'):
+            ref_name = easyqt.get_file_names('the reference file directory:')
+        else:
+            ref_name = []
+
+
+
     if targetName == []:
         targetName = defaults['Files'].get('target file')
     else:
@@ -114,7 +203,18 @@ if len(sys.argv) > 2 or easyqt.get_yes_or_no('Do you want to load a target file?
                             'Files',
                             'target file', targetName[0])
 
-    temp_Data = wpu.load_csv_file(targetName[0])[0]
+    if use_cap:
+        if ref_name == []:
+            temp_Data = load_cap_file(targetName[0])[0]
+        else:
+            temp_Data = load_cap_file(targetName[0])[0]
+            temp_Data_ref = load_cap_file(ref_name[0])[0]
+            # substitude the reference state
+            temp_Data[:,profilenumber] = temp_Data[:,profilenumber] - temp_Data_ref[:,profilenumber]
+
+    else:
+        temp_Data = wpu.load_csv_file(targetName[0])[0]
+    # temp_Data = wpu.load_csv_file(targetName[0])[0]
     lim_xnew = np.min((np.abs(listOfArrays[0][0, 0]),
                        np.abs(listOfArrays[0][-1, 0]),
                        np.abs(temp_Data[0, 0]),
@@ -124,10 +224,38 @@ else:
 
     lim_xnew = np.min((np.abs(listOfArrays[0][0, 0]),
                        np.abs(listOfArrays[0][-1, 0])))
+# use the perfect spherical wavefront of the current state as a target
+# use the perfect spherical wavefront of the current state as a target
+if target_perfect and ref_name==[]:
+    '''
+        use polyfit to fit the wavefront to the spherical wavefront
+    '''
+
+    f_fitting = np.polyfit(temp_Data[:, 0], temp_Data[:, profilenumber], 2)
+    fitted_target = f_fitting[0]*temp_Data[:, 0]**2 + f_fitting[1]*temp_Data[:, 0] + f_fitting[2]
+
+    target_original = list(temp_Data[:,profilenumber])
+    temp_Data[:,profilenumber] = target_original - fitted_target
+    plt.figure(12)
+    plt.subplot(121)
+    plt.plot(temp_Data[:,0], target_original, '-r',temp_Data[:,0], fitted_target, '*k')
+    plt.legend(['original', 'spherical fitting'])
+    plt.title('target wavefront spherical fitting')
+    plt.ylabel('rad')
+    plt.xlabel('position')
+    plt.subplot(122)
+    plt.plot(temp_Data[:,0], temp_Data[:,profilenumber], '-r')
+    plt.title('residual')
+    plt.ylabel('rad')
+    plt.xlabel('position')
+
+    figname = wpu.get_unique_filename(dirName + '/respons_func', 'png')
+    plt.savefig(figname)
+    plt.show()
 
 # %%
 
-npoints_interp = 500
+npoints_interp = 200
 
 xnew = np.linspace(-lim_xnew, lim_xnew, npoints_interp)
 
@@ -152,7 +280,6 @@ plt.figure(figsize=(12, 8))
 listInterpFunc = []
 
 for data, fname in zip(listOfArrays, listOfFiles):
-
     f = interp1d(data[:, 0], data[:, profilenumber], kind='cubic')
     listInterpFunc.append(f)
 
@@ -450,27 +577,26 @@ if temp_Data is None:
 
 # %%
 # Radius is the pre-curve for the mirror?
-# Radius = 104.00
-Radius = 2.0
+Radius = 104.00
+#Radius = 1.828
 nominal = -(Radius-np.sqrt(Radius**2-(xnew-0.0)**2))
 
-target = -temp_Data[:, 1]
+target = temp_Data[:, 1]
 
 
 f_target = interp1d(temp_Data[:, 0], target, kind='cubic')
 
 if xnew[-1] <= temp_Data[-1, 0]:
     target = f_target(xnew)
-    target -= nominal
 else:
     target = xnew*0.0
     target[np.where(np.abs(xnew)<temp_Data[-1, 0])] = f_target(xnew[np.where(np.abs(xnew)<temp_Data[-1, 0])])
     target[np.where(np.abs(xnew)<temp_Data[-1, 0])] -= nominal[np.where(np.abs(xnew)<temp_Data[-1, 0])]
 
 # to reduce the second order phase
-# pfit = np.polyfit(xnew, target, 2)
-# bestfit2nd = pfit[0]*xnew**2 + pfit[1]*xnew + pfit[2]
-# target -= bestfit2nd
+#pfit = np.polyfit(xnew, target, 2)
+#bestfit2nd = pfit[0]*xnew**2 + pfit[1]*xnew + pfit[2]
+#target -= bestfit2nd
 
 dpc_target = np.diff(target)/np.mean(np.diff(xnew))/(-1/2/np.pi*wavelength)
 curv_target = np.diff(dpc_target)/np.mean(np.diff(xnew))*(-1/2/np.pi*wavelength)
@@ -528,35 +654,50 @@ if True:
 #
 #arg_max = np.argmin((xnew-max_x)**2)
 #
-#arg_min = 1062
-#arg_max = -928
-#
-#m_matrix = m_matrix[arg_min:arg_max,:]
-#target = target[arg_min:arg_max]
-#xnew = xnew[arg_min:arg_max]
+
+'''
+here's how to choose the part to be fitted.
+'''
+# arg_min = -round(npoints_interp/4)
+# arg_max = round(npoints_interp/4)
+
+# m_matrix = m_matrix[arg_min:arg_max,:]
+# target = target[arg_min:arg_max]
+# xnew = xnew[arg_min:arg_max]
 
 
 # %%
 from scipy.optimize import lsq_linear, least_squares
 
 
-bound_all = 5000.000
+bound_all = 500.000
 
-bound_top = np.array([bound_all, bound_all, bound_all, bound_all,
-                      bound_all, bound_all, bound_all, bound_all,
-                      bound_all, bound_all, bound_all, bound_all,
-                      bound_all, bound_all, bound_all, bound_all,
-                      bound_all, bound_all,
-                      1e20, 1e20])
 
-bound_all = -5000.00
+# bound_top = np.array([bound_all, bound_all, bound_all, bound_all,
+#                       bound_all, bound_all, bound_all, bound_all,
+#                       bound_all, bound_all, bound_all, bound_all,
+#                       bound_all, bound_all, bound_all, bound_all,
+#                       bound_all, bound_all,
+#                       1e20, 1e20])
+bound_p1_top = 92.7 - ref_p[0]
+bound_p2_top = 119.2 - ref_p[1]
+# bound_p2_top = 1
+bound_top = np.array([bound_p1_top, bound_p2_top,
+                      1e20, 1e-20])
 
-bound_bottom = np.array([bound_all, bound_all, bound_all, bound_all,
-                         bound_all, bound_all, bound_all, bound_all,
-                         bound_all, bound_all, bound_all, bound_all,
-                         bound_all, bound_all, bound_all, bound_all,
-                         bound_all, bound_all,
-                         -1e20, -1e20])
+bound_all = -500.00
+
+# bound_bottom = np.array([bound_all, bound_all, bound_all, bound_all,
+#                          bound_all, bound_all, bound_all, bound_all,
+#                          bound_all, bound_all, bound_all, bound_all,
+#                          bound_all, bound_all, bound_all, bound_all,
+#                          bound_all, bound_all,
+#                          -1e20, -1e20])
+bound_p1_bot = -224 - ref_p[0]
+bound_p2_bot = -200 - ref_p[1]
+# bound_p2_bot = -1
+bound_bottom = np.array([bound_p1_bot, bound_p2_bot,
+                         -1e20, -1e-20])
 # correction 1
 
 #bound_bottom = np.array([-.145, -.759, -.1, -.553, -.491, -.235,
@@ -570,10 +711,8 @@ bound_bottom = np.array([bound_all, bound_all, bound_all, bound_all,
 
 
 if 'Height' in what2do:
-    # res = lsq_linear(m_matrix, target, bounds=(bound_bottom, bound_top),
-    #                  method='bvls', tol=1e-32, verbose=1, max_iter=1000)
     res = lsq_linear(m_matrix, target, bounds=(bound_bottom, bound_top),
-                    method='bvls', tol=1e-32, verbose=1, max_iter=1000)
+                     method='bvls', tol=1e-32, verbose=1, max_iter=1000)
 elif 'DPC' in what2do:
     res = lsq_linear(m_matrix, dpc_target, bounds=(bound_bottom, bound_top), verbose=1)
 elif 'Curvature' in what2do:
@@ -605,9 +744,9 @@ wpu.print_blue('tilt: {:.4g} rad?'.format(tilt))
 
 # TODO:
 
-base_voltage = 00.0
-for volt in voltage:
-    print('{:.1f}'.format(volt + base_voltage), end=" ")
+base_voltage = ref_p
+for kk, volt in enumerate(voltage):
+    print('{:.1f}'.format(volt + ref_p[kk]), end=" ")
 
 print('')
 
@@ -700,6 +839,41 @@ wpu.save_csv_file(for_csv,
                   fname=fname,
                   headerList=['x[m], Height [m], Residual [m]'])
 # %%
+'''
+    test voltage for 4 element matrix
+'''
+test_volt = voltage4plot
+
+
+finalSurface_test = m_matrix @ test_volt
+
+
+plt.figure()
+plt.plot(xnew*1e6, finalSurface_test*1e9, xnew*1e6, target*1e9)
+plt.legend(['final_surface','target'])
+
+plt.ylabel('Height [nm]')
+plt.title('Final Surface')
+plt.xlabel(r'y [um]')
+plt.show()
+exit()
+# %%
+plt.figure()
+
+residual_test = finalSurface_test -target
+residual_test -= np.mean(residual_test)
+
+plt.plot(xnew*1e6, residual_test*1e9)
+
+plt.ylabel('Height [nm]')
+
+
+plt.title('Residual')
+plt.xlabel(r'y [um]')
+plt.show(block=False)
+
+
+
 #
 #test_volt = np.array([-100., -100., 100., -100.,
 #                      100., 100., 100., 100.,

@@ -1,62 +1,13 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-  #
-# #########################################################################
-# Copyright (c) 2015, UChicago Argonne, LLC. All rights reserved.         #
-#                                                                         #
-# Copyright 2015. UChicago Argonne, LLC. This software was produced       #
-# under U.S. Government contract DE-AC02-06CH11357 for Argonne National   #
-# Laboratory (ANL), which is operated by UChicago Argonne, LLC for the    #
-# U.S. Department of Energy. The U.S. Government has rights to use,       #
-# reproduce, and distribute this software.  NEITHER THE GOVERNMENT NOR    #
-# UChicago Argonne, LLC MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR        #
-# ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  If software is     #
-# modified to produce derivative works, such modified software should     #
-# be clearly marked, so as not to confuse it with the version available   #
-# from ANL.                                                               #
-#                                                                         #
-# Additionally, redistribution and use in source and binary forms, with   #
-# or without modification, are permitted provided that the following      #
-# conditions are met:                                                     #
-#                                                                         #
-#     * Redistributions of source code must retain the above copyright    #
-#       notice, this list of conditions and the following disclaimer.     #
-#                                                                         #
-#     * Redistributions in binary form must reproduce the above copyright #
-#       notice, this list of conditions and the following disclaimer in   #
-#       the documentation and/or other materials provided with the        #
-#       distribution.                                                     #
-#                                                                         #
-#     * Neither the name of UChicago Argonne, LLC, Argonne National       #
-#       Laboratory, ANL, the U.S. Government, nor the names of its        #
-#       contributors may be used to endorse or promote products derived   #
-#       from this software without specific prior written permission.     #
-#                                                                         #
-# THIS SOFTWARE IS PROVIDED BY UChicago Argonne, LLC AND CONTRIBUTORS     #
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT       #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS       #
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL UChicago     #
-# Argonne, LLC OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,        #
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,    #
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;        #
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER        #
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT      #
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN       #
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE         #
-# POSSIBILITY OF SUCH DAMAGE.                                             #
-# #########################################################################
+import glob
+import multiprocessing as ms
+import concurrent.futures
+import os
 
-'''
-Author: Walan Grizolli
-
-
-'''
-# %%
 import sys
 import os
 
-if len(sys.argv) != 1: # if command line, dont show the plots
-    import matplotlib
-    matplotlib.use('Agg')
+import matplotlib
+matplotlib.use('Agg')
 
 import numpy as np
 
@@ -92,11 +43,12 @@ def main_single_gr_Talbot(img, imgRef,
                           saveFigFlag=False):
 
     img_size_o = np.shape(img)
-
-    img, idx4crop = crop_dialog(img, saveFigFlag=saveFigFlag)
+    
+    img, idx4crop = crop_dialog(img, pixelsize, saveFileSuf=saveFileSuf, saveFigFlag=saveFigFlag)
+    print('start')
     if imgRef is not None:
         imgRef = wpu.crop_matrix_at_indexes(imgRef, idx4crop)
-
+    
     # I dont know why in the past I had these lines: (WG 20180406)
     #    if imgRef is None:
     #        img, idx4crop = crop_dialog(img, saveFigFlag=saveFigFlag)
@@ -122,7 +74,7 @@ def main_single_gr_Talbot(img, imgRef,
          period_harm_Hor) = wgi.exp_harm_period(imgRef, [period_harm_Vert_o,
                                                 period_harm_Hor_o],
                                                 harmonic_ij=['0', '1'],
-                                                searchRegion=60,
+                                                searchRegion=30,
                                                 isFFT=False, verbose=True)
 
         wpu.print_blue('MESSAGE: Obtain harmonic 10 exprimentally')
@@ -131,11 +83,12 @@ def main_single_gr_Talbot(img, imgRef,
          _) = wgi.exp_harm_period(imgRef, [period_harm_Vert_o,
                                   period_harm_Hor_o],
                                   harmonic_ij=['1', '0'],
-                                  searchRegion=60,
+                                  searchRegion=30,
                                   isFFT=False, verbose=True)
 
         harmPeriod = [period_harm_Vert, period_harm_Hor]
 
+    print(period_harm_Vert,period_harm_Vert_o)
     # Calculate everything
 
     [int00, int01, int10,
@@ -162,7 +115,7 @@ def main_single_gr_Talbot(img, imgRef,
 
 
 # %%
-def crop_dialog(img, saveFigFlag=False):
+def crop_dialog(img, pixelsize, saveFileSuf, saveFigFlag=False):
 
     global inifname  # name of .ini file
     global gui_mode
@@ -432,8 +385,6 @@ def _load_experimental_pars(argv):
 
     global gui_mode
     global inifname  # name of .ini file
-    # here is to get the path to the ini file, which contains all the parameters
-    # the name of the ini file is supposed to be same with this python script
     inifname = os.curdir + '/.' + os.path.basename(__file__).replace('.py', '.ini')
 
     if len(argv) == 17:
@@ -572,7 +523,7 @@ def _load_experimental_pars(argv):
                       '/' + fname_img.rsplit('/', 1)[1].split('.')[0] + '_output/'
     else:
         saveFileSuf = fname_img.rsplit('/', 1)[1].split('.')[0] + '_output/'
-
+	
     if os.path.isdir(saveFileSuf):
         saveFileSuf = wpu.get_unique_filename(saveFileSuf, isFolder=True)
 
@@ -817,7 +768,7 @@ def correct_zero_DPC(dpc01, dpc10,
             dpc = [dpc01, dpc10]
 
             wgi.plot_DPC(dpc01, dpc10,
-                         virtual_pixelsize, saveFigFlag=saveFigFlag,
+                         pixelsize, saveFigFlag=saveFigFlag,
                          saveFileSuf=saveFileSuf)
             plt.show(block=False)
 
@@ -868,7 +819,7 @@ def correct_zero_DPC(dpc01, dpc10,
         plt.pause(.5)
 
         wgi.plot_DPC(dpc01, dpc10,
-                     virtual_pixelsize, saveFigFlag=saveFigFlag,
+                     pixelsize, saveFigFlag=saveFigFlag,
                      saveFileSuf=saveFileSuf)
         plt.show(block=True)
         plt.pause(.1)
@@ -927,7 +878,7 @@ def correct_zero_DPC(dpc01, dpc10,
 
 # Integration
 def doIntegration(diffPhase01, diffPhase10,
-                  virtual_pixelsize, newCrop=True):
+                  virtual_pixelsize, saveFileSuf, newCrop=True):
 
     global gui_mode
 
@@ -1148,17 +1099,17 @@ def get_delta(phenergy, choice_idx=-1,
 # =============================================================================
 # %% Main
 # =============================================================================
-if __name__ == '__main__':
+def SingleGrating_analyse_single(load_data):
 
     # ==========================================================================
     # %% Experimental parameters
     # ==========================================================================
-
+    
     (img, imgRef, saveFileSuf,
      pixelsize, gratingPeriod, pattern,
      distDet2sample,
      phenergy, sourceDistance,
-     menu_options) = _load_experimental_pars(sys.argv)
+     menu_options) = load_data
 
     (correct_pi_jump, remove_mean, remove_linear,
      do_integration, calc_thickness,
@@ -1173,12 +1124,12 @@ if __name__ == '__main__':
     period_harm_Hor = np.int(pixelsize[1]/gratingPeriod*img.shape[1] /
                              (sourceDistance + distDet2sample)*sourceDistance)
 
-    saveFigFlag = True
+    saveFigFlag = False
 
     # ==========================================================================
     # %% do the magic
     # ==========================================================================
-
+    
     # for relative mode we need to have imgRef=None,
     result = main_single_gr_Talbot(img, imgRef,
                                    phenergy, pixelsize, distDet2sample,
@@ -1188,7 +1139,7 @@ if __name__ == '__main__':
                                    unwrapFlag=True,
                                    plotFlag=False,
                                    saveFigFlag=saveFigFlag)
-
+    
     if saveFigFlag:
 
         figs = [plt.figure(n) for n in plt.get_fignums()]
@@ -1400,7 +1351,7 @@ if __name__ == '__main__':
                              projectionFromDiv=projectionFromDiv,
                              remove1stOrderDPC=False,
                              remove2ndOrder=False,
-                             nprofiles=5, filter_width=50)
+                             nprofiles=5, filter_width=10)
 
     # %% Fit DPC
 
@@ -1421,7 +1372,7 @@ if __name__ == '__main__':
         wpu.print_blue('MESSAGE: Performing Frankot-Chellapa Integration')
 
         phase = doIntegration(diffPhase01, diffPhase10,
-                              virtual_pixelsize)
+                              virtual_pixelsize, saveFileSuf)
         wpu.print_blue('DONE')
 
         wpu.print_blue('MESSAGE: Plotting Phase in meters')
@@ -1495,7 +1446,7 @@ if __name__ == '__main__':
 
             phase_2nd_order = doIntegration(linfitDPC01,
                                             linfitDPC10,
-                                            virtual_pixelsize, newCrop=False)
+                                            virtual_pixelsize, saveFileSuf, newCrop=False)
 
             wgi.plot_integration(1/2/np.pi*phase_2nd_order, virtual_pixelsize,
                                  titleStr=r'WF, 2nd order component' +
@@ -1507,7 +1458,7 @@ if __name__ == '__main__':
 
             phase_2nd_order = doIntegration(diffPhase01 - linfitDPC01,
                                             diffPhase10 - linfitDPC10,
-                                            virtual_pixelsize, newCrop=False)
+                                            virtual_pixelsize, saveFileSuf, newCrop=False)
 
             wgi.plot_integration(1/2/np.pi*phase_2nd_order, virtual_pixelsize,
                                  titleStr=r'WF, difference to 2nd order component' +
@@ -1604,21 +1555,6 @@ if __name__ == '__main__':
 
         wpu.print_blue('DONE')
 
-# %%
-
-
-#    from fastplot_with_pyqtgraph import plot_surf_fast
-
-
-#    plot_surf_fast(phase, [virtual_pixelsize[1], virtual_pixelsize[0]])
-
-# %%
-
-#    plot_surf_fast(err, [virtual_pixelsize[1], virtual_pixelsize[0]])
-
-
-#
-#
 # %% Mirror
 #    grazing_angle = 4e-3  # rad
 #
@@ -1632,103 +1568,62 @@ if __name__ == '__main__':
 #    plt.ylim([-100, 100])
 #    plt.show(block=True)
 
-# %% Propagate
+if __name__ == "__main__":
+    
+    FOLDER='C:/Users/zqiao/Documents/xray_wavefront/Goldberg/Experiment_A_CB4p8halfpi_170mm_10s/A-0110_A-0113/'
+    FPATTERN='A-0113*.tif'  # file pattern for sample
+    FOLDER_DARK='C:/Users/zqiao/Documents/xray_wavefront/Goldberg/'
+    FOLDER_REF='C:/Users/zqiao/Documents/xray_wavefront/Goldberg/Experiment_A_CB4p8halfpi_170mm_10s/'
 
-if False:
-    import sys
-    sys.path.append('/home/grizolli/workspace/pythonWorkspace/wgTools')
-    from myOpticsLib import *
-    from myFourierLib import *
-    import time
-    from unwrap import unwrap
+    DARK_IMG='dark_10s.tif'
+    REF_IMG='A-0055-0005_062.tif'
 
-    # % Propagation 1
+    CPU_parallel = True
+    n_CPU = 4
+    cores = ms.cpu_count()
 
-    zz = -6.49
-    zz = -19.3
+    if cores > n_CPU:
+        cores = n_CPU
+    # get the sample file list
+    list_sample = glob.glob(os.path.join(FOLDER, FPATTERN))
 
-    int_pad = np.pad(int00, ((200*2, 200*2),
-                             (200*2, 200*2)), 'constant', constant_values=0)
-    phase_pad = np.pad(phase, ((200*2, 200*2),
-                               (200*2, 200*2)), 'constant', constant_values=0)
+    img_ref = os.path.join(FOLDER_REF, REF_IMG)
+    img_dark = os.path.join(FOLDER_DARK, DARK_IMG)
+    para_grating = [0.65, 4.8, 'Diagonal half pi', 170, 14.0, 34.0]
+    para_process = [1, 1, 0, 1, 0, 0, 0]
 
-    diff_size_ij = int_pad.shape[0] - int_pad.shape[1]
-    if diff_size_ij > 0:
-        int_pad = np.pad(int_pad, ((0, 0), (0, diff_size_ij)),
-                         'constant', constant_values=0)
-        phase_pad = np.pad(phase_pad, ((0, 0), (0, diff_size_ij)),
-                           'constant', constant_values=0)
-    else:
+    load_data = []
+    # load all the data together
+    for img_sample in list_sample:
+        list_para = ['', img_sample, img_ref, img_dark] + para_grating + para_process
+        load_data.append(_load_experimental_pars(list_para))
+        # (img, imgRef, saveFileSuf,
+        # pixelsize, gratingPeriod, pattern,
+        # distDet2sample,
+        # phenergy, sourceDistance,
+        # menu_options) = _load_experimental_pars(list_para)
 
-        int_pad = np.pad(int_pad, ((0, -diff_size_ij), (0, 0)),
-                         'constant', constant_values=0)
-        phase_pad = np.pad(phase_pad, ((0, -diff_size_ij), (0, 0)),
-                           'constant', constant_values=0)
+    # processes = [ms.Process(target=SingleGrating_analyse_single, args=(img_sample, img_ref, img_dark,
+    #                                         para_grating, para_process)) for img_sample in list_sample]
 
-    Lx = virtual_pixelsize[1]*phase_pad.shape[1]
-    Ly = virtual_pixelsize[0]*phase_pad.shape[0]
-    fresnelNumber(Lx, zz, wavelength, verbose=True)
+    # # Run processes
+    # for p in processes:
+    #     p.start()
 
-    emf = np.sqrt(int_pad)*np.exp(-1j*phase_pad*1)
+    # # Exit the completed processes
+    # for p in processes:
+    #     p.join()
 
-    start_time = time.time()
-    u2_xy = propTForIR(emf, Lx, Ly, wavelength, zz)
-    wpu.print_blue("--- Running time: %.4f seconds ---" % (time.time() - start_time))
+    # use concurrent pakage to realize process pool
+    with concurrent.futures.ProcessPoolExecutor(max_workers=cores) as executor:
+        futures = [executor.submit(SingleGrating_analyse_single, single_data) for single_data in load_data]
+        
+        # for future in concurrent.futures.as_completed(futures):
+        #         result_list.append(future.result())
+        #         print(future.result())
 
-    #    start_time = time.time()
-    #    Lx2 = 400e-6
-    #    u2_xy = prop2step(emf, Lx, Lx2, wavelength, zz)
-    #    wpu.print_blue("--- Running time: %.4f seconds ---" % (time.time() - start_time))
-
-    #        prop2step(u1,L1,L2,wavelength,z)
-    # %
-    #    start_time = time.time()
-    #    u2_xy = propIR_RayleighSommerfeld(emf,Lx,Ly,wavelength,zz)
-    #    titleStr = str(r'propIR_RayleighSommerfeld, zz=%.3fmm, Intensity [a.u.]'
-    #                   % (zz*1e3))
-            #            d2T_dx2 = np.diff(thickness, 2, 1)/virtual_pixelsize[1]**2
-            #            d2T_dy2 = np.diff(thickness, 2, 0)/virtual_pixelsize[0]**2
-            #
-            #            Rx = 1/d2T_dx2
-            #            Ry = 1/d2T_dx2
-            #
-            #            print('Rx: {:.4g}m, sdv: {:.4g}'.format(np.nanmean(Rx), np.nanstd(Rx)))
-            #            print('Ry: {:.4g}m, sdv: {:.4g}'.format(np.nanmean(Ry), np.nanstd(Ry)))
-    # %
-    #    start_time = time.time()
-    #    u2_xy = propTF_RayleighSommerfeld(emf,Lx,Ly,wavelength,zz)
-    #    wpu.print_blue("--- Running time: %.4f seconds ---" % (time.time() - start_time))
-
-    print('Propagation Done!')
-
-    intensityDet = np.abs(u2_xy)
-    wfdet = unwrap(np.angle(u2_xy))
-
-    xmatrix, ymatrix = wpu.realcoordmatrix(intensityDet.shape[1],
-                                           virtual_pixelsize[1],
-                                           intensityDet.shape[0],
-                                           virtual_pixelsize[0])
-
-    #    xmatrix *= Lx2/Lx
-    #    ymatrix *= Lx2/Lx
-
-    # %%
-    mask = intensityDet*0.0 + np.nan
-
-    mask[intensityDet > .0000] = 1.0
-    #    mask[420:-420, 200:-200] = 1.0
-    stride = 4
-
-    wpu.plot_profile(xmatrix[::stride, ::stride]*1e6,
-                     ymatrix[::stride, ::stride]*1e6,
-                     intensityDet[::stride, ::stride]*mask[::stride, ::stride],
-                     xunit='\mu m', yunit='\mu m')
-
-    # %%
-    wpu.plot_profile(xmatrix[::stride, ::stride]*1e6,
-                     ymatrix[::stride, ::stride]*1e6,
-                     wfdet[::stride, ::stride]*mask[::stride, ::stride],
-                     xunit='\mu m', yunit='\mu m')
-
-# %%
-
+    # import threading
+    # from queue import Queue
+    # for img_sample in list_sample:
+    #     threading.Thread(target=SingleGrating_analyse_single, args=(img_sample, img_ref, img_dark,
+    #                                         para_grating, para_process)).start()

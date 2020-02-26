@@ -20,30 +20,46 @@ import glob
 
 from scipy.interpolate import interp1d
 
-
+def load_csv_new(path_cap):
+    '''
+    Here use the cap to wavesensor data transfer function to generate the same structure
+    data file with the wavefront measurement curve. The file is generated in the dir_name path
+    '''
+    # Load data as numpy array
+    data = np.loadtxt(path_cap, delimiter=',', encoding='utf-8-sig', skiprows=1)
+    header = ['Height']
+    comments = []
+    return data, header, comments
+    
 def _gaussian_dist(x, sigma, xo):
 
     return 1/np.sqrt(2*np.pi)/sigma*np.exp(-(x-xo)**2/2/sigma**2)
 
 wpu._mpl_settings_4_nice_graphs(otheroptions={'lines.linewidth': 2})
 
-voltage4response = 100.00
+#base_voltage = [500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0, 500.0]
+base_voltage = [643.6, 480.6, 386.2, 556.3, 365.9, 566.7, 393.9, 581.5, 475.5, 547.3, 476.6, 584.2, 481.5, 485.4, 646.4, 448.1, 503.4, 1000.0]
+voltage4response = 200.00	#applied change in user unit, for bimorph, it is voltage, for bender, it may be the displacement of bender position
 
-
-phenergy = 1e20
+phenergy = 14000	#in eV
 wavelength = wpu.hc/phenergy
 
-# here is to choose which collum in the csv fitting data is used for the response function calculation
-profilenumber = 4
+profilenumber = 3	#profile index in the target and RF csv files
+
+subtractnominal = 1	#subtract a norminal spherical wf with Radius below
+Radius = -0.71
+
+
+npoints_interp = 200	#number of points to interpolate both the target and the RF
 
 # %%
 
 if len(sys.argv) == 1:
-    dirName = easyqt.get_directory_name('Directory to the data:')
+    dirName = easyqt.get_directory_name(title='Select folder contains RF')
 else:
     dirName = sys.argv[1]
 
-# here the response function initialization file
+
 inifname = '.response_function.ini'
 defaults = wpu.load_ini_file(inifname)
 
@@ -67,7 +83,8 @@ listOfShapes = []
 
 for fname in listOfFiles:
     wpu.print_blue('MESSAGE: Open File ' + fname)
-    fileContent = wpu.load_csv_file(fname)
+    #fileContent = wpu.load_csv_file(fname)
+    fileContent = load_csv_new(fname)
     listOfArrays.append(fileContent[0])
 
     listOfShapes.append(np.shape(fileContent[0]))
@@ -85,7 +102,6 @@ for data, fname in zip(listOfArrays, listOfFiles):
 if 'Height' in headers[-1]:
     what2do = 'Height response function'
 else:
-
     what2do = wpu.get_from_ini_file(inifname, 'Parameters', 'what2do')
 
     if 'DPC' in what2do:
@@ -98,14 +114,14 @@ else:
 wpu.set_at_ini_file(inifname, 'Parameters', 'what2do', what2do)
 
 # %% Target
-# Target file is the shape wanted for the correction.
+
 
 if len(sys.argv) > 2 or easyqt.get_yes_or_no('Do you want to load a target file?'):
 
     if len(sys.argv) > 2:
         targetName = sys.argv[2]
     else:
-        targetName = easyqt.get_file_names('the target file directory:')
+        targetName = easyqt.get_file_names(title='select target CSV')
 
     if targetName == []:
         targetName = defaults['Files'].get('target file')
@@ -114,7 +130,8 @@ if len(sys.argv) > 2 or easyqt.get_yes_or_no('Do you want to load a target file?
                             'Files',
                             'target file', targetName[0])
 
-    temp_Data = wpu.load_csv_file(targetName[0])[0]
+    #temp_Data = wpu.load_csv_file(targetName[0])[0]
+    temp_Data = load_csv_new(targetName[0])[0]
     lim_xnew = np.min((np.abs(listOfArrays[0][0, 0]),
                        np.abs(listOfArrays[0][-1, 0]),
                        np.abs(temp_Data[0, 0]),
@@ -127,7 +144,6 @@ else:
 
 # %%
 
-npoints_interp = 500
 
 xnew = np.linspace(-lim_xnew, lim_xnew, npoints_interp)
 
@@ -136,7 +152,7 @@ xnew = np.linspace(-lim_xnew, lim_xnew, npoints_interp)
 #exit()
 
 
-# %% to filter the data to make it smooth for the analyze
+# %%
 
 from scipy.ndimage import gaussian_filter1d
 
@@ -238,7 +254,7 @@ if False:
 
 # %% Time plot
 
-if True:
+if False:
 
     plt.figure(figsize=(12, 8))
 
@@ -270,11 +286,11 @@ if True:
 
 # %%
 
-wpu.save_csv_file([foo, bufferdata],
-                  fname=wpu.get_unique_filename(dirName + '/resp_func_time_scan', 'dat'),
-                  headerList=['Time',
-                              what2do +
-                              ' at x = {:.0f} µm'.format(data[xIndex2plot, 0]*1e6//1)])
+    wpu.save_csv_file([foo, bufferdata],
+                      fname=wpu.get_unique_filename(dirName + '/resp_func_time_scan', 'dat'),
+                      headerList=['Time',
+                                  what2do +
+                                  ' at x = {:.0f} µm'.format(data[xIndex2plot, 0]*1e6//1)])
 
 # %% Curvature
 
@@ -317,6 +333,7 @@ if 'Curvature' in what2do:
     ylim = plt.gca().get_ylim()
 
     plt.show(block=True)
+
 
 
 # %% remove 2nd order
@@ -438,7 +455,7 @@ plt.savefig(figname)
 plt.show()
 
 # %%
-# if there's no target for correction, then exit the code
+
 
 if temp_Data is None:
     exit()
@@ -447,35 +464,95 @@ if temp_Data is None:
 
 #exit()
 
+#Radius = 1.828
+if subtractnominal == 0:
+	nominal = 0.0*xnew
+else:	
+	nominal = -(Radius-np.sqrt(Radius**2-(xnew-0.0)**2))
 
 # %%
-# Radius is the pre-curve for the mirror?
-# Radius = 104.00
-Radius = 2.0
-nominal = -(Radius-np.sqrt(Radius**2-(xnew-0.0)**2))
 
-target = -temp_Data[:, 1]
+target = -temp_Data[:, 1]	#target is the negative of measured wavefront, this is to get flat wf
 
 
 f_target = interp1d(temp_Data[:, 0], target, kind='cubic')
 
 if xnew[-1] <= temp_Data[-1, 0]:
     target = f_target(xnew)
-    target -= nominal
+    target -= nominal		
 else:
     target = xnew*0.0
     target[np.where(np.abs(xnew)<temp_Data[-1, 0])] = f_target(xnew[np.where(np.abs(xnew)<temp_Data[-1, 0])])
-    target[np.where(np.abs(xnew)<temp_Data[-1, 0])] -= nominal[np.where(np.abs(xnew)<temp_Data[-1, 0])]
+    target[np.where(np.abs(xnew)<temp_Data[-1, 0])] -= nominal[np.where(np.abs(xnew)<temp_Data[-1, 0])]	#This is the difference between the nominal sphere wf and the measured wf
 
-# to reduce the second order phase
-# pfit = np.polyfit(xnew, target, 2)
-# bestfit2nd = pfit[0]*xnew**2 + pfit[1]*xnew + pfit[2]
-# target -= bestfit2nd
+
+# %%
+if True:
+    plt.figure()
+    plt.plot(xnew*1e6, target*1e9)
+    #    plt.plot(temp_Data[:, 0]*1e6, temp_Data[:, 1]*1e9)
+    plt.title('Target_before cut, ' + targetName[0].rsplit('/', 1)[1] +
+              ', rms = {:.2f} pm'.format(np.std(target)*1e12))
+    plt.xlabel(r'y [um]')
+    plt.ylabel(r'height [nm]')
+    figname = wpu.get_unique_filename(dirName + '/respons_func', 'png')
+    plt.savefig(figname)
+    plt.show(block=False)
+#
+## %%
+#
+#min_x = -340e-6
+#max_x = 340e-6
+#
+#arg_min = np.argmin((xnew-min_x)**2)
+#
+#arg_max = np.argmin((xnew-max_x)**2)
+#
+#cut the wavefront and RF
+#
+arg_min = 50
+arg_max = -30
+#
+m_matrix = m_matrix[arg_min:arg_max,:]
+target = target[arg_min:arg_max]
+xnew = xnew[arg_min:arg_max]
+if True:
+    plt.figure()
+    plt.plot(xnew*1e6, target*1e9)
+    #    plt.plot(temp_Data[:, 0]*1e6, temp_Data[:, 1]*1e9)
+    plt.title('Target_cropped, ' + targetName[0].rsplit('/', 1)[1] +
+              ', rms = {:.2f} pm'.format(np.std(target)*1e12))
+    plt.xlabel(r'y [um]')
+    plt.ylabel(r'height [nm]')
+    plt.show(block=False)
+
+
+# %% remove 1st order
+
+if True:
+    pfit = np.polyfit(xnew, target, 1)
+    fitted_func = pfit[0]*xnew + pfit[1]
+
+    # %%
+#    plt.figure(figsize=(12, 8))
+#    plt.plot(xnew*1e6, target, '-')
+#    plt.plot(xnew*1e6, fitted_func, '-')
+
+#    plt.ylabel('WF ' + headers[-1])
+#    plt.xlabel('[µm]')
+#    plt.title('1st order polynomial Fit')
+#    plt.show()
+
+    target -= fitted_func
+
+ 
+#pfit = np.polyfit(xnew, target, 2)
+#bestfit2nd = pfit[0]*xnew**2 + pfit[1]*xnew + pfit[2]
+#target -= bestfit2nd
 
 dpc_target = np.diff(target)/np.mean(np.diff(xnew))/(-1/2/np.pi*wavelength)
 curv_target = np.diff(dpc_target)/np.mean(np.diff(xnew))*(-1/2/np.pi*wavelength)
 
-# to make them same length as their length before diff function
 dpc_target = np.pad(dpc_target, (0, 1), 'edge')
 curv_target = np.pad(curv_target, 1, 'edge')
 
@@ -494,6 +571,7 @@ if True:
     plt.savefig(figname)
     plt.show(block=False)
 
+if False:
     # target DPC
 
     plt.figure()
@@ -517,45 +595,29 @@ if True:
 # %%
 
 #exit()
-#
-## ******************************************************************************
-#  here is to choose the interesting area in the target to make it flat within this area
-# *******************************************************************************
-#min_x = -340e-6
-#max_x = 340e-6
-#
-#arg_min = np.argmin((xnew-min_x)**2)
-#
-#arg_max = np.argmin((xnew-max_x)**2)
-#
-#arg_min = 1062
-#arg_max = -928
-#
-#m_matrix = m_matrix[arg_min:arg_max,:]
-#target = target[arg_min:arg_max]
-#xnew = xnew[arg_min:arg_max]
-
 
 # %%
 from scipy.optimize import lsq_linear, least_squares
 
 
-bound_all = 5000.000
+bound_all = 100.000
+block_all = 0.001
 
-bound_top = np.array([bound_all, bound_all, bound_all, bound_all,
-                      bound_all, bound_all, bound_all, bound_all,
-                      bound_all, bound_all, bound_all, bound_all,
-                      bound_all, bound_all, bound_all, bound_all,
-                      bound_all, bound_all,
+bound_top = np.array([block_all, block_all, block_all, block_all,
+                      block_all, bound_all, bound_all, bound_all,
+                      bound_all, bound_all, bound_all, block_all,
+                      block_all, block_all, block_all, block_all,
+                      block_all, block_all,
                       1e20, 1e20])
 
-bound_all = -5000.00
+bound_all = -100.00
+block_all = -0.001
 
-bound_bottom = np.array([bound_all, bound_all, bound_all, bound_all,
-                         bound_all, bound_all, bound_all, bound_all,
-                         bound_all, bound_all, bound_all, bound_all,
-                         bound_all, bound_all, bound_all, bound_all,
-                         bound_all, bound_all,
+bound_bottom = np.array([block_all, block_all, block_all, block_all,
+                         block_all, bound_all, bound_all, bound_all,
+                         bound_all, bound_all, bound_all, block_all,
+                         block_all, block_all, block_all, block_all,
+                         block_all, block_all,
                          -1e20, -1e20])
 # correction 1
 
@@ -570,10 +632,8 @@ bound_bottom = np.array([bound_all, bound_all, bound_all, bound_all,
 
 
 if 'Height' in what2do:
-    # res = lsq_linear(m_matrix, target, bounds=(bound_bottom, bound_top),
-    #                  method='bvls', tol=1e-32, verbose=1, max_iter=1000)
     res = lsq_linear(m_matrix, target, bounds=(bound_bottom, bound_top),
-                    method='bvls', tol=1e-32, verbose=1, max_iter=1000)
+                     method='bvls', tol=1e-32, verbose=1, max_iter=1000)
 elif 'DPC' in what2do:
     res = lsq_linear(m_matrix, dpc_target, bounds=(bound_bottom, bound_top), verbose=1)
 elif 'Curvature' in what2do:
@@ -605,14 +665,22 @@ wpu.print_blue('tilt: {:.4g} rad?'.format(tilt))
 
 # TODO:
 
-base_voltage = 00.0
-for volt in voltage:
-    print('{:.1f}'.format(volt + base_voltage), end=" ")
 
+#for volt in voltage:
+#    print('{:.1f}'.format(volt + base_voltage), end=" ")
+
+#print('')
+
+
+for nn in range(18):
+    print('{:.1f}'.format(voltage[nn] + base_voltage[nn]), end=" ")
+    
 print('')
 
-
-
+for nn in range(18):
+    print('{:.1f}'.format(voltage[nn] + base_voltage[nn]), end=", ")
+    
+print('')
 # %%
 
 fname = wpu.get_unique_filename(dirName + '/resp_func_m_matrix_' + what2do.replace(' ', '_'), 'dat')
@@ -737,7 +805,8 @@ wpu.save_csv_file(for_csv,
 
 # %%
 #
-plt.figure()
+if False:
+    plt.figure()
 #
 ##myModel = .145*m_matrix[:, 0] + \
 ##          .759*m_matrix[:, 1] + \
@@ -752,27 +821,27 @@ plt.figure()
 #
 #
 
-myVoltages = [0., 0., 0., 0.,
-              0., 0., 0., 0.,
-              0., 0., 0., 0.,
-              0., 0., 0., 0.,
-              0., 0., 0.]
+    myVoltages = [0., 0., 0., 0.,
+                  0., 0., 0., 0.,
+                  0., 0., 0., 0.,
+                  0., 0., 0., 0.,
+                  0., 0., 0.]
 
 #voltage4plot[-2] = 0
 #voltage4plot[-1] = 0
-myModel = m_matrix @ voltage4plot
+    myModel = m_matrix @ voltage4plot
 
 
-plt.plot(xnew*1e6, (myModel - np.min((myModel)))*1e9, '-')
+    plt.plot(xnew*1e6, (myModel - np.min((myModel)))*1e9, '-')
 
 
 #plt.title('Residual, Correction: {:} V'.format(bound_top))
 
-plt.title('My Model')
-plt.xlabel(r'y [um]')
-figname = wpu.get_unique_filename(dirName + '/respons_func', 'png')
-plt.savefig(figname)
-plt.show(block=False)
+    plt.title('My Model')
+    plt.xlabel(r'y [um]')
+    figname = wpu.get_unique_filename(dirName + '/respons_func', 'png')
+    plt.savefig(figname)
+    plt.show(block=False)
 #
 ## %%
 #

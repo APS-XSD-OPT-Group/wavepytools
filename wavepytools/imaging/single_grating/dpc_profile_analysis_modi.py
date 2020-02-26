@@ -731,6 +731,127 @@ def dpc_profile_analysis(fnameH, fnameV,
                                   titleStr='Vertical, ',
                                   saveFileSuf=saveFileSuf + '_Y')
 
+def dpc_profile_analysis_modi(fnameH, fnameV,
+                         phenergy,
+                         grazing_angle=0.0, projectionFromDiv=1.0,
+                         nprofiles=1,
+                         remove1stOrderDPC=False,
+                         remove2ndOrder=False,
+                         filter_width=0):
+
+    wavelength = wpu.hc/phenergy
+
+    if fnameH is not None:
+        diffPhaseH, virtual_pixelsize, _ = wpu.load_sdf_file(fnameH)
+
+    if fnameV is not None:
+        diffPhaseV, virtual_pixelsize, _ = wpu.load_sdf_file(fnameV)
+
+    if fnameH is None:
+        diffPhaseH = diffPhaseV*np.nan
+
+    if fnameV is None:
+        diffPhaseV = diffPhaseH*np.nan
+        saveFileSuf = fnameH.rsplit('/', 1)[0] + '/profiles/' +\
+                      fnameH.rsplit('/', 1)[1]
+        saveFileSuf = saveFileSuf.rsplit('_X')[0] + '_profiles'
+    else:
+        saveFileSuf = fnameV.rsplit('/', 1)[0] + '/profiles/' +\
+                      fnameV.rsplit('/', 1)[1]
+        saveFileSuf = saveFileSuf.rsplit('_Y')[0] + '_profiles'
+
+    if not os.path.exists(saveFileSuf.rsplit('/', 1)[0]):
+        os.makedirs(saveFileSuf.rsplit('/', 1)[0])
+
+    '''
+        force the dpc_profile to smaller range.
+    '''
+    from matplotlib import  pyplot as plt
+    #
+    # print(diffPhaseV.shape)
+    plt.figure()
+    plt.imshow(diffPhaseV)
+    plt.show()
+
+    diffPhaseV = diffPhaseV[71:461, :]
+    diffPhaseH = diffPhaseH[71:461, :]
+    #
+    plt.figure()
+    plt.imshow(diffPhaseV)
+    plt.show()
+
+    (dataH, dataV,
+     labels_H, labels_V,
+     fit_coefs) = _n_profiles_H_V(diffPhaseH,
+                                  diffPhaseV,
+                                  virtual_pixelsize,
+                                  'DPC [rad/m]',
+                                  titleH='WF DPC Horz',
+                                  titleV='WF DPC Vert',
+                                  saveFileSuf=saveFileSuf,
+                                  nprofiles=nprofiles,
+                                  remove1stOrderDPC=remove1stOrderDPC,
+                                  filter_width=filter_width)
+
+    fit_coefsH = np.array(fit_coefs[0])
+    fit_coefsV = np.array(fit_coefs[1])
+
+    print(fit_coefsH)
+    print(fit_coefsV)
+
+    if __name__ == '__main__':
+        wpu.log_this(preffname=saveFileSuf, inifname=inifname)
+
+    if fnameH is not None:
+
+        radii_fit_H = (2*np.pi/wavelength/fit_coefsH[:][0])
+
+        wpu.print_blue('MESSAGE: Radius H from fit profiles: ')
+        print(radii_fit_H)
+        wpu.log_this('radius fit Hor = ' + str(radii_fit_H))
+
+        integratedH = integrate_DPC_cumsum(dataH, wavelength,
+                                           #grazing_angle=grazing_angle,
+                                           remove2ndOrder=remove2ndOrder,
+                                           xlabel='x',
+                                           labels=labels_H,
+                                           titleStr='Horizontal, ',
+                                           saveFileSuf=saveFileSuf + '_X')
+
+        curv_H = curv_from_height(integratedH, virtual_pixelsize[0],
+                                  #grazing_angle=grazing_angle,
+                                  #projectionFromDiv=projectionFromDiv,
+                                  xlabel='x',
+                                  labels=labels_H,
+                                  titleStr='Horizontal, ',
+                                  saveFileSuf=saveFileSuf + '_X')
+
+    if fnameV is not None:
+
+        radii_fit_V = (2*np.pi/wavelength/fit_coefsV[:][0])
+
+        wpu.print_blue('MESSAGE: Radius V from fit profiles: ')
+        print(radii_fit_V)
+        wpu.log_this('radius fit Vert = ' + str(radii_fit_V))
+
+        integratedV = integrate_DPC_cumsum(dataV, wavelength,
+                                           grazing_angle=grazing_angle,
+                                           projectionFromDiv=projectionFromDiv,
+                                           remove2ndOrder=remove2ndOrder,
+                                           xlabel='y',
+                                           labels=labels_V,
+                                           titleStr='Vertical, ',
+                                           saveFileSuf=saveFileSuf + '_Y')
+
+        curv_V = curv_from_height(integratedV, virtual_pixelsize[1],
+                                  grazing_angle=grazing_angle,
+                                  projectionFromDiv=projectionFromDiv,
+                                  xlabel='y',
+                                  labels=labels_V,
+                                  titleStr='Vertical, ',
+                                  saveFileSuf=saveFileSuf + '_Y')
+
+
 if __name__ == '__main__':
 
     (fnameH, fnameV,

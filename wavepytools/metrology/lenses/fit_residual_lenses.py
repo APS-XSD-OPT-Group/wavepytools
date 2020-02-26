@@ -9,7 +9,7 @@ import numpy as np
 
 from numpy.fft import fft2, ifft2, fftfreq
 
-if len(sys.argv) > 1 or False:
+if len(sys.argv) > 1 or True:
     import matplotlib
     matplotlib.use('Agg')
 
@@ -1109,12 +1109,12 @@ if __name__ == '__main__':
                                                     makeAnimation=False)
 
         material = 'C'
-        delta_lens = wpu.get_delta(8000, material=material, gui_mode=False)[0]
+        delta_lens = wpu.get_delta(14000, material=material, gui_mode=False)[0]
         sigma_seh, sigma_sev = slope_error_hist(thickness_cropped, fitted,
                                                 pixelSize,
                                                 saveFigFlag=True,
                                                 delta=delta_lens,
-                                                str4title=str4graphs + ' 8KeV, ' + material)
+                                                str4title=str4graphs + ' 14KeV, ' + material)
 
         text2datfile += fname2save
         text2datfile += ',\t Nominal'

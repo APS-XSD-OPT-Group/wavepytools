@@ -48,7 +48,6 @@
 '''
 Author: Walan Grizolli
 
-
 '''
 # %%
 import sys
@@ -684,7 +683,8 @@ def _lsq_fit_parabola(zz, pixelsize):
 
     X_matrix = np.vstack([x**2, y**2, x, y, x*0.0 + 1]).T
 
-    beta_matrix = np.linalg.lstsq(X_matrix, f)[0]
+    fitting_lstsq = np.linalg.lstsq(X_matrix, f)
+    beta_matrix = fitting_lstsq[0]
 
     fit = (beta_matrix[0]*(xx**2) +
            beta_matrix[1]*(yy**2) +
@@ -1082,9 +1082,10 @@ def get_delta(phenergy, choice_idx=-1,
 
     choices = ['Diamond, 3.525g/cm^3',
                'Beryllium, 1.848 g/cm^3',
+               'Alluminium, 2.710g/cm^3',
                'Manual Input']
 
-    menu_choices = [choices[0], choices[1], choices[2]]  # Change order here!
+    menu_choices = [choices[0], choices[1], choices[2], choices[3]]  # Change order here!
 
     if gui_mode:
         # this ovwerride the choice_idx option
@@ -1108,6 +1109,11 @@ def get_delta(phenergy, choice_idx=-1,
         delta = 1 - xraylib.Refractive_Index_Re("Be", phenergy/1e3,
                                                 xraylib.ElementDensity(4))
         material = 'Beryllium'
+    elif choice == choices[2]:
+            # delta at 8KeV = 5.3265E-06
+        delta = 1 - xraylib.Refractive_Index_Re("Al", phenergy/1e3,
+                                                xraylib.ElementDensity(4))
+        material = 'Alluminium'
 
     elif choice == choices[-1]:
 
@@ -1584,7 +1590,10 @@ if __name__ == '__main__':
         wpu.print_blue('Curvature Radius of WF x: {:.3g} m'.format(popt[0]))
         wpu.print_blue('Curvature Radius of WF y: {:.3g} m'.format(popt[1]))
 
-        err = -(phase - phase_2nd_order_lsq)  # [rad]
+        err_temp = -(phase - phase_2nd_order_lsq)  # [rad]
+        # bound_mask = 15
+        # err = err_temp[bound_mask:-1-bound_mask, bound_mask:-1-bound_mask]
+        err = err_temp
         err -= np.min(err)
 
         wgi.plot_integration(err/2/np.pi*wavelength*1e9, virtual_pixelsize,
@@ -1600,6 +1609,7 @@ if __name__ == '__main__':
             wpu.save_sdf_file(err/2/np.pi*wavelength, virtual_pixelsize,
                               wpu.get_unique_filename(saveFileSuf + '_phase_residual', 'sdf'),
                               {'Title': 'WF Phase', 'Zunit': 'meters'})
+            np.savetxt(wpu.get_unique_filename(saveFileSuf + '_phase_residual', '.txt'), err/2/np.pi*wavelength)
 
 
         wpu.print_blue('DONE')

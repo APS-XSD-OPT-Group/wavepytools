@@ -23,6 +23,9 @@ import wavepy.surface_from_grad as wpsg
 
 import itertools
 
+import tkinter as tk
+from tkinter import filedialog
+
 
 
 #==============================================================================
@@ -83,13 +86,17 @@ def mySimplePlot(array, title=''):
     plt.title(title)
     plt.colorbar()
     if saveFigFlag: wpu.save_figs_with_idx(foutname)
-    plt.show(block=True)
+    # plt.show(block=True)
 
 #==============================================================================
 # %% Load files
 #==============================================================================
 
-fname = wpu.select_file('**/*.h5')
+root = tk.Tk('select h5 file')
+root.withdraw()
+fname = filedialog.askopenfilename()
+
+# fname = wpu.select_file('**/*.h5')
 
 foutname = fname.rsplit('.')[0]
 
@@ -131,10 +138,10 @@ yVec_raw =  np.array(f['displacement/yvec'])
 # %% Crop
 #==============================================================================
 
-idx4crop = wpu.graphical_roi_idx(np.sqrt(sx_raw**2 + sy_raw**2), verbose=True)
+# idx4crop = wpu.graphical_roi_idx(np.sqrt(sx_raw**2 + sy_raw**2), verbose=True)
+idx4crop = [9, 417, 7, 512]
 
-
-
+print('flag1')
 sx = wpu.crop_matrix_at_indexes(sx_raw, idx4crop)
 sy = wpu.crop_matrix_at_indexes(sy_raw, idx4crop)
 error = wpu.crop_matrix_at_indexes(error_raw, idx4crop)
@@ -165,7 +172,7 @@ dpy = kwave*np.arctan2(sy*pixelsizeDetector, distDet2sample)
 dTx = 1.0/delta*np.arctan2(sx*pixelsizeDetector, distDet2sample)
 dTy = 1.0/delta*np.arctan2(sy*pixelsizeDetector, distDet2sample)
 
-
+print('flag2')
 #==============================================================================
 # %% quiver
 #==============================================================================
@@ -230,7 +237,7 @@ thickness = np.real(integration_res)
 thickness = thickness - np.min(thickness)
 
 # %%
-
+print('flag3')
 wpsg.error_integration(dTx*pixelsizeImg, dTy*pixelsizeImg, thickness,
                        [pixelsizeImg, pixelsizeImg], shifthalfpixel=True, plot_flag=True)
 
@@ -238,15 +245,16 @@ wpsg.error_integration(dTx*pixelsizeImg, dTy*pixelsizeImg, thickness,
 # %% Thickness
 #==============================================================================
 
-
+print('flag4')
 stride = 1
 
-wpu.plot_profile(xmatrix[::stride, ::stride]*1e6,
-                 ymatrix[::stride, ::stride]*1e6,
-                 thickness[::stride, ::stride]*1e6,
-                 title='Thickness', xlabel='[um]', ylabel='[um]',
-                 arg4main={'cmap':'Spectral'}) #, xo=0.0, yo=0.0)_1Dparabol_4_fit
-plt.show(block=True)
+# wpu.plot_profile(xmatrix[::stride, ::stride]*1e6,
+#                  ymatrix[::stride, ::stride]*1e6,
+#                  thickness[::stride, ::stride]*1e6,
+#                  title='Thickness', xlabel='[um]', ylabel='[um]',
+#                  arg4main={'cmap':'Spectral'}) #, xo=0.0, yo=0.0)_1Dparabol_4_fit
+# # plt.show(block=True)
+# plt.show()
 
 #==============================================================================
 # %% Plot
@@ -271,24 +279,24 @@ def plotsidebyside(array1, array2, title1='', title2='', maintitle=''):
                      interpolation='none',
                      vmin=vmin, vmax=vmax)
     ax1.set_title(title1, fontsize=22)
-    ax1.set_adjustable('box-forced')
+    ax1.set_adjustable('box')
     fig.colorbar(im1, ax=ax1, shrink=.8, aspect=20)
 
     im2 = ax2.imshow(array2, cmap='RdGy',
                      interpolation='none',
                      vmin=vmin, vmax=vmax)
     ax2.set_title(title2, fontsize=22)
-    ax2.set_adjustable('box-forced')
+    ax2.set_adjustable('box')
     fig.colorbar(im2, ax=ax2, shrink=.8, aspect=20)
 
 
     if saveFigFlag: wpu.save_figs_with_idx(foutname)
-    plt.show(block=True)
+    # plt.show(block=True)
 
 #==============================================================================
 # %% Plot dpx and dpy and fit Curvature Radius of WF
 #==============================================================================
-
+print('flag5')
 
 fig = plt.figure(figsize=(14, 5))
 fig.suptitle('Phase [rad]', fontsize=14)
@@ -312,7 +320,7 @@ ax1.plot(xVec*1e6, lin_funcx(xVec),'--c',lw=2)
 curvrad_x = kwave/(lin_fitx[0])
 
 ax1.set_title('Curvature Radius of WF {:.3g} m'.format(curvrad_x), fontsize=18)
-ax1.set_adjustable('box-forced')
+ax1.set_adjustable('box')
 
 
 ax2.plot(yVec*1e6, dpy[:,dpy.shape[0]//4],'-ob')
@@ -328,22 +336,22 @@ ax2.plot(yVec*1e6, lin_funcy(yVec),'--c',lw=2)
 curvrad_y = kwave/(lin_fity[0])
 
 ax2.set_title('Curvature Radius of WF {:.3g} m'.format(curvrad_y), fontsize=18)
-ax2.set_adjustable('box-forced')
+ax2.set_adjustable('box')
 
 
 
 if saveFigFlag: wpu.save_figs_with_idx(foutname)
-plt.show(block=True)
+# plt.show()
 
-
-
-# %%
-
-plotsidebyside(sx, sy, r'Displacement $S_x$ [pixels]',
-                         r'Displacement $S_y$ [pixels]')
+print('flag6')
 
 # %%
-mySimplePlot(totalS, title=r'Displacement Module $|\vec{S}|$ [pixels]')
+
+plotsidebyside(sx, sy, 'Displacement $S_x$ [pixels]',
+                         'Displacement $S_y$ [pixels]')
+
+# %%
+mySimplePlot(totalS, title='Displacement Module $|\vec{S}|$ [pixels]')
 
 # %%
 
@@ -356,19 +364,19 @@ ax2 = plt.subplot(122, sharex=ax1, sharey=ax1)
 ax1.plot(sx.flatten(),error.flatten(),'.')
 ax1.set_xlabel('Sy [pixel]')
 ax1.set_title('Error vs Sx', fontsize=22)
-ax1.set_adjustable('box-forced')
+ax1.set_adjustable('box')
 
 
 ax2.plot(sy.flatten(),error.flatten(),'.')
 ax2.set_xlabel('Sy [pixel]')
 ax2.set_title('Error vs Sy', fontsize=22)
-ax2.set_adjustable('box-forced')
+ax2.set_adjustable('box')
 
 
-if saveFigFlag: wpu.save_figs_with_idx(foutname)
-plt.show(block=True)
+# if saveFigFlag: wpu.save_figs_with_idx(foutname)
+# plt.show(block=True)
 
-
+print('flag7')
 #==============================================================================
 # %% Histograms to evaluate data quality
 #==============================================================================
@@ -379,15 +387,15 @@ fig.suptitle('Histograms to evaluate data quality', fontsize=16)
 
 ax1 = plt.subplot(121)
 ax1 = plt.hist(sx.flatten(), 51)
-ax1 = plt.title(r'$S_x$ [pixels]', fontsize=16)
+ax1 = plt.title('$S_x$ [pixels]', fontsize=16)
 
 ax1 = plt.subplot(122)
 ax2 = plt.hist(sy.flatten(), 51)
-ax2 = plt.title(r'$S_y$ [pixels]', fontsize=16)
+ax2 = plt.title('$S_y$ [pixels]', fontsize=16)
 
 
 if saveFigFlag: wpu.save_figs_with_idx(foutname)
-plt.show(block=True)
+# plt.show(block=True)
 
 ##==============================================================================
 ## %% Total displacement
@@ -410,14 +418,14 @@ fig.suptitle('Histograms to evaluate data quality', fontsize=16)
 
 ax1 = plt.subplot(121)
 ax1 = plt.hist(np.real(integration_res).flatten()*1e6, 51)
-ax1 = plt.title(r'Integration Real part', fontsize=16)
+ax1 = plt.title('Integration Real part', fontsize=16)
 
 ax1 = plt.subplot(122)
 ax2 = plt.hist(np.imag(integration_res).flatten()*1e6, 51)
-ax2 = plt.title(r'Integration Imag part', fontsize=16)
+ax2 = plt.title('Integration Imag part', fontsize=16)
 
 if saveFigFlag: wpu.save_figs_with_idx(foutname)
-plt.show(block=True)
+# plt.show(block=True)
 
 # %% Crop Result and plot surface
 
@@ -480,7 +488,7 @@ wpu.plot_profile(xmatrix_croped1[lim:-lim,lim:-lim]*1e6,
 
 
 
-plt.show(block=True)
+# plt.show(block=True)
 
 # %%
 
@@ -510,6 +518,7 @@ plt.colorbar(surf, shrink=.8, aspect=20)
 
 plt.tight_layout()
 if saveFigFlag: wpu.save_figs_with_idx(foutname)
-plt.show(block=False)
+# plt.show(block=False)
+plt.show()
 
 
