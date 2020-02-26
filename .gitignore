@@ -3,3 +3,5 @@
 /.idea/
 /wavepytools/.idea/
 /dist/
+/wavepytools/version.py
+/wavepytools.egg-info/
