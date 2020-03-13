@@ -74,7 +74,7 @@ import wavepy.grating_interferometry as wgi
 from wavepy.utils import easyqt
 
 import xraylib
-from dpc_profile_analysis import dpc_profile_analysis
+from wavepytools.imaging.single_grating.dpc_profile_analysis import dpc_profile_analysis
 
 rad2deg = np.rad2deg(1)
 deg2rad = np.deg2rad(1)
