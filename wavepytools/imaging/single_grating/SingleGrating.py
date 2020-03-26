@@ -1190,8 +1190,6 @@ if __name__ == '__main__':
                                    plotFlag=False,
                                    saveFigFlag=saveFigFlag)
 
-    sys.exit(0)
-
     if saveFigFlag:
 
         figs = [plt.figure(n) for n in plt.get_fignums()]
