@@ -61,10 +61,13 @@ import numpy as np
 plotFourierImages = False
 
 if plotFourierImages:
-
     import matplotlib
+
     matplotlib.use('Agg')
 
+import matplotlib
+
+matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 
@@ -78,13 +81,14 @@ import time
 
 import os
 from wavepy.utils import easyqt
+import sys
+
 
 # =============================================================================
 # %% Function for multiprocessing
 # =============================================================================
 
 def _func(parameters):
-
     i, listOfDataFiles, zvec, idx4cropDark, idx4crop, period_harm_Vert, sourceDistanceV, period_harm_Horz, sourceDistanceH, searchRegion, unFilterSize = parameters
 
     wpu.print_blue("MESSAGE: loop " + str(i) + ": " +
@@ -94,24 +98,22 @@ def _func(parameters):
 
     darkMeanValue = np.mean(wpu.crop_matrix_at_indexes(img, idx4cropDark))
 
-    #TODO xshi, need to add option of input one value
-
+    # TODO xshi, need to add option of input one value
 
     img = img - darkMeanValue  # calculate and remove dark
     img = wpu.crop_matrix_at_indexes(img, idx4crop)
 
     pv = int(period_harm_Vert /
-             (sourceDistanceV + zvec[i])*(sourceDistanceV+np.min(zvec)))
+             (sourceDistanceV + zvec[i]) * (sourceDistanceV + np.min(zvec)))
     ph = int(period_harm_Horz /
-             (sourceDistanceH + zvec[i])*(sourceDistanceH+np.min(zvec)))
+             (sourceDistanceH + zvec[i]) * (sourceDistanceH + np.min(zvec)))
 
     if plotFourierImages:
-
         wgi.plot_harmonic_grid(img,
                                [pv, ph],
                                isFFT=False)
 
-        plt.savefig('FFT_{:.0f}mm.png'.format(zvec[i]*1e3))
+        plt.savefig('FFT_{:.0f}mm.png'.format(zvec[i] * 1e3))
         plt.show(block=False)
         plt.close()
 
@@ -119,7 +121,7 @@ def _func(parameters):
                                [pv, ph],
                                isFFT=False)
 
-        plt.savefig('FFT_peaks_{:.0f}mm.png'.format(zvec[i]*1e3))
+        plt.savefig('FFT_peaks_{:.0f}mm.png'.format(zvec[i] * 1e3))
         plt.show(block=False)
         plt.close()
 
@@ -127,13 +129,13 @@ def _func(parameters):
                                    searchRegion=searchRegion,
                                    unFilterSize=unFilterSize)
 
+
 def main():
     wpu._mpl_settings_4_nice_graphs()
 
     # =============================================================================
     # %% Load Image
     # =============================================================================
-
 
     originalDir = os.getcwd()
 
@@ -166,19 +168,19 @@ def main():
 
         startDist = easyqt.get_float('Starting distance scan [mm]',
                                      title='Title',
-                                     default_value=20)*1e-3
+                                     default_value=20) * 1e-3
 
         step_z_scan = easyqt.get_float('Step size scan [mm]',
                                        title='Title',
-                                       default_value=5)*1e-3
+                                       default_value=5) * 1e-3
 
         image_per_point = easyqt.get_int('Number of images by step',
                                          title='Title',
                                          default_value=1)
 
         zvec = np.linspace(startDist,
-                           startDist + step_z_scan*(nfiles/image_per_point-1),
-                           int(nfiles/image_per_point))
+                           startDist + step_z_scan * (nfiles / image_per_point - 1),
+                           int(nfiles / image_per_point))
         zvec = zvec.repeat(image_per_point)
 
         strideFile = easyqt.get_int('Stride (Use only every XX files)',
@@ -189,7 +191,7 @@ def main():
         print(zvec)
     elif zvec_from == 'Tabled':
 
-        zvec = np.loadtxt(easyqt.get_file_names("Table with the z distance values in mm")[0])*1e-3
+        zvec = np.loadtxt(easyqt.get_file_names("Table with the z distance values in mm")[0]) * 1e-3
         step_z_scan = np.mean(np.diff(zvec))
 
     if step_z_scan > 0:
@@ -198,9 +200,7 @@ def main():
         listOfDataFiles = listOfDataFiles[::-1]
         zvec = zvec[::-1]
 
-
     img = dxchange.read_tiff(listOfDataFiles[0])
-
 
     # =============================================================================
     # %% Experimental parameters
@@ -208,12 +208,11 @@ def main():
 
     pixelSize = easyqt.get_float("Enter Pixel Size [um]",
                                  title='Experimental Values',
-                                 default_value=.6500, decimals=5)*1e-6
+                                 default_value=.6500, decimals=5) * 1e-6
 
     gratingPeriod = easyqt.get_float("Enter CB Grating Period [um]",
                                      title='Experimental Values',
-                                     default_value=4.8)*1e-6
-
+                                     default_value=4.8) * 1e-6
 
     pattern = easyqt.get_choice(message='Select CB Grating Pattern',
                                 title='Title',
@@ -239,22 +238,20 @@ def main():
 
     os.chdir(originalDir)
 
-
     # =============================================================================
     # %% Crop
     # =============================================================================
 
     idx4crop = [0, -1, 0, -1]
 
-
     [colorlimit,
      cmap] = wpu.plot_slide_colorbar(img,
                                      title='SELECT COLOR SCALE,\n' +
-                                     'Raw Image, No Crop',
+                                           'Raw Image, No Crop',
                                      xlabel=r'x [$\mu m$ ]',
                                      ylabel=r'y [$\mu m$ ]',
                                      extent=wpu.extent_func(img,
-                                                            pixelSize)*1e6)
+                                                            pixelSize) * 1e6)
 
     idx4crop = wpu.graphical_roi_idx(img, verbose=True,
                                      kargs4graph={'cmap': cmap,
@@ -267,7 +264,6 @@ def main():
     # =============================================================================
     # %% Dark indexes
     # =============================================================================
-
 
     darkRegionSelctionFlag = easyqt.get_yes_or_no('Do you want to select ' +
                                                   'region for dark calculation?\n' +
@@ -291,11 +287,11 @@ def main():
     # ==============================================================================
 
     if pattern == 'Diagonal':
-        period_harm_Vert = np.int(np.sqrt(2)*pixelSize/gratingPeriod*img.shape[0])
-        period_harm_Horz = np.int(np.sqrt(2)*pixelSize/gratingPeriod*img.shape[1])
+        period_harm_Vert = np.int(np.sqrt(2) * pixelSize / gratingPeriod * img.shape[0])
+        period_harm_Horz = np.int(np.sqrt(2) * pixelSize / gratingPeriod * img.shape[1])
     elif pattern == 'Edge':
-        period_harm_Vert = np.int(2*pixelSize/gratingPeriod*img.shape[0])
-        period_harm_Horz = np.int(2*pixelSize/gratingPeriod*img.shape[1])
+        period_harm_Vert = np.int(2 * pixelSize / gratingPeriod * img.shape[0])
+        period_harm_Horz = np.int(2 * pixelSize / gratingPeriod * img.shape[1])
 
     # Obtain harmonic periods from images
 
@@ -307,7 +303,7 @@ def main():
 
     (_,
      period_harm_Horz) = wgi.exp_harm_period(img, [period_harm_Vert,
-                                             period_harm_Horz],
+                                                   period_harm_Horz],
                                              harmonic_ij=['0', '1'],
                                              searchRegion=40,
                                              isFFT=False, verbose=True)
@@ -319,11 +315,11 @@ def main():
     wpu.log_this('Z distances is ' + zvec_from)
 
     if zvec_from == 'Calculated':
-        wpu.log_this('Step zscan [mm] : {:.4g}'.format(step_z_scan*1e3))
-        wpu.log_this('Start point zscan [mm] : {:.4g}'.format(startDist*1e3))
+        wpu.log_this('Step zscan [mm] : {:.4g}'.format(step_z_scan * 1e3))
+        wpu.log_this('Start point zscan [mm] : {:.4g}'.format(startDist * 1e3))
 
-    wpu.log_this('Pixel Size [um] : {:.4g}'.format(pixelSize*1e6))
-    wpu.log_this('Grating Period [um] : {:.4g}'.format(gratingPeriod*1e6))
+    wpu.log_this('Pixel Size [um] : {:.4g}'.format(pixelSize * 1e6))
+    wpu.log_this('Grating Period [um] : {:.4g}'.format(gratingPeriod * 1e6))
     wpu.log_this('Grating Pattern : ' + pattern)
     wpu.log_this('Crop idxs : ' + str(idx4crop))
     wpu.log_this('Dark idxs : ' + str(idx4cropDark))
@@ -335,23 +331,21 @@ def main():
 
     wpu.log_this('Search Region : {:d}'.format(searchRegion))
 
-
     # =============================================================================
     # %% Calculate everything
     # =============================================================================
 
-
     # =============================================================================
     # %% multiprocessing
     # =============================================================================
-    
+
     ncpus = cpu_count()
 
     wpu.print_blue("MESSAGE: %d cpu's available" % ncpus)
 
     tzero = time.time()
 
-    p = Pool(ncpus-5)
+    p = Pool(ncpus - 5)
 
     indexes = range(len(listOfDataFiles))
     parameters = []
@@ -364,7 +358,6 @@ def main():
 
     wpu.print_blue('MESSAGE: Time spent: {0:.3f} s'.format(time.time() - tzero))
 
-
     '''
     res = []
     for i in range(len(listOfDataFiles)):
@@ -375,7 +368,6 @@ def main():
     # %% Sorting the data
     # =============================================================================
 
-
     contrastV = np.asarray([x[0] for x in res])
     contrastH = np.asarray([x[1] for x in res])
 
@@ -383,9 +375,8 @@ def main():
     pv = np.asarray([x[3] for x in res])
     ph = np.asarray([x[4] for x in res])
 
-    pattern_period_Vert_z = pixelSize/(pv[:, 0] - p0[:, 0])*img.shape[0]
-    pattern_period_Horz_z = pixelSize/(ph[:, 1] - p0[:, 1])*img.shape[1]
-
+    pattern_period_Vert_z = pixelSize / (pv[:, 0] - p0[:, 0]) * img.shape[0]
+    pattern_period_Horz_z = pixelSize / (ph[:, 1] - p0[:, 1]) * img.shape[1]
 
     # =============================================================================
     # %% Save csv file
@@ -405,7 +396,6 @@ def main():
                                   'Vert Period [m]',
                                   'Horz Period [m]'])
 
-
     wpu.log_this('\nOutput file: ' + outputfname)
 
     # =============================================================================
@@ -414,16 +404,14 @@ def main():
 
     # contrast vs z
     fig = plt.figure(figsize=(10, 7))
-    plt.plot(zvec*1e3, contrastV*100, '-ko', label='Vert')
-    plt.plot(zvec*1e3, contrastH*100, '-ro', label='Hor')
+    plt.plot(zvec * 1e3, contrastV * 100, '-ko', label='Vert')
+    plt.plot(zvec * 1e3, contrastH * 100, '-ro', label='Hor')
     plt.xlabel(r'Distance $z$  [mm]', fontsize=14)
-
 
     plt.ylabel(r'Visibility $\times$ 100 [%]', fontsize=14)
     plt.title('Visibility vs detector distance', fontsize=14, weight='bold')
 
     plt.legend(fontsize=14, loc=0)
-
 
     wpu.save_figs_with_idx(fname2save)
     plt.show(block=False)
@@ -431,9 +419,9 @@ def main():
     # =============================================================================
     # %% Plot Harmonic position and calculate source distance
     # =============================================================================
-#    from wavepytools.diag.coherence.fit_singleGratingCoherence_z_scan import fit_period_vs_z
-#xshi 20190719
-    from fit_singleGratingCoherence_z_scan import fit_period_vs_z
+    #    from wavepytools.diag.coherence.fit_singleGratingCoherence_z_scan import fit_period_vs_z
+    # xshi 20190719
+    from wavepytools.diag.coherence.fit_singleGratingCoherence_z_scan import fit_period_vs_z
     (sourceDistance_from_fit_V,
      patternPeriodFromData_V) = fit_period_vs_z(zvec, pattern_period_Vert_z,
                                                 contrastV,
@@ -449,6 +437,374 @@ def main():
                                                 fname4graphs=fname2save)
 
 
-if __name__=="__main__":
+def main_terminal(data_dir, zvec_from, startDist, step_z_scan, image_per_point,
+                  strideFile, pixelSize=0.65e-6, gratingPeriod=4.8e-6, pattern='Diagonal',
+                  sourceDistanceV=-1, sourceDistanceH=32, unFilterSize=1, searchRegion=20,
+                  idx4crop=[0, -1, 0, -1], darkRegionSelctionFlag=True):
+    '''
+        *** all unit in [m]
+        data_dir:       data folder path
+        zvec_from:      distance type:
+                        'Calculated'
+                        'Tabled'
+        startDist:      started distance postion
+        step_z_scan:    step size
+        image_per_point:    images number for every distance
+        strideFile:     Stride (Use only every XX files)
+
+        pixelSize:       Pixel Size
+        gratingPeriod:   CB Grating Period
+        pattern:         grating pattern
+                        'Diagonal' or 'Edge']
+        sourceDistanceV:    Distance to Source
+                             in the VERTICAL [m]
+        sourceDistanceH:    Distance to Source
+                            in the Horizontal [m]
+        unFilterSize:   Size for Uniform Filter [Pixels]
+                        default_value  1
+        searchRegion:   Size of Region for Searching
+                        the Peak [in Pixels]
+                        default_value=20
+        idx4crop:       crop area
+                        [low_y, high_y, low_x, high_x ]
+        darkRegionSelctionFlag:     use dark region [0, 20, 0, 20]?
+
+    '''
+    wpu._mpl_settings_4_nice_graphs()
+
+    # =============================================================================
+    # %% Load Image
+    # =============================================================================
+
+    originalDir = os.getcwd()
+
+    # samplefileName = easyqt.get_file_names("Choose one of the scan files")[0]
+
+    # data_dir = samplefileName.rsplit('/', 1)[0]
+    os.chdir(data_dir)
+
+    try:
+        os.mkdir(data_dir + '/output/')
+    except:
+        pass
+
+    fname2save = data_dir + '/output/' + 'zscan'
+
+    # wpu.print_blue('MESSAGE: Loading files ' +
+    #                samplefileName.rsplit('_', 1)[0] + '*.tif')
+    wpu.print_blue('MESSAGE: Loading files ' +
+                   data_dir + '/*.tif')
+
+    # listOfDataFiles = glob.glob(samplefileName.rsplit('_', 2)[0] + '*.tif')
+    listOfDataFiles = glob.glob(os.path.join(data_dir, '*.tif'))
+    listOfDataFiles.sort()
+    nfiles = len(listOfDataFiles)
+
+    # zvec_from = easyqt.get_choice(message='z distances is calculated or from table?',
+    #                               title='Title',
+    #                               choices=['Calculated', 'Tabled'])
+
+    # %%
+
+    if zvec_from == 'Calculated':
+
+        # startDist = easyqt.get_float('Starting distance scan [mm]',
+        #                              title='Title',
+        #                              default_value=20)*1e-3
+
+        # step_z_scan = easyqt.get_float('Step size scan [mm]',
+        #                                title='Title',
+        #                                default_value=5)*1e-3
+
+        # image_per_point = easyqt.get_int('Number of images by step',
+        #                                  title='Title',
+        #                                  default_value=1)
+
+        zvec = np.linspace(startDist,
+                           startDist + step_z_scan * (nfiles / image_per_point - 1),
+                           int(nfiles / image_per_point))
+        zvec = zvec.repeat(image_per_point)
+
+        # strideFile = easyqt.get_int('Stride (Use only every XX files)',
+        #                             title='Title',
+        #                             default_value=1)
+        listOfDataFiles = listOfDataFiles[0::strideFile]
+        zvec = zvec[0::strideFile]
+        print(zvec)
+    elif zvec_from == 'Tabled':
+
+        zvec = np.loadtxt(easyqt.get_file_names("Table with the z distance values in mm")[0]) * 1e-3
+        step_z_scan = np.mean(np.diff(zvec))
+
+    if step_z_scan > 0:
+        pass
+    else:
+        listOfDataFiles = listOfDataFiles[::-1]
+        zvec = zvec[::-1]
+
+    img = dxchange.read_tiff(listOfDataFiles[0])
+
+    # =============================================================================
+    # %% Experimental parameters
+    # =============================================================================
+
+    # pixelSize = easyqt.get_float("Enter Pixel Size [um]",
+    #                              title='Experimental Values',
+    #                              default_value=.6500, decimals=5)*1e-6
+
+    # gratingPeriod = easyqt.get_float("Enter CB Grating Period [um]",
+    #                                  title='Experimental Values',
+    #                                  default_value=4.8)*1e-6
+
+    # pattern = easyqt.get_choice(message='Select CB Grating Pattern',
+    #                             title='Title',
+    #                             choices=['Diagonal', 'Edge'])
+    # #                            choices=['Edge', 'Diagonal'])
+
+    # sourceDistanceV = easyqt.get_float("Enter Distance to Source\n in the VERTICAL [m]",
+    #                                    title='Experimental Values',
+    #                                    default_value=-0.73)
+
+    # sourceDistanceH = easyqt.get_float("Enter Distance to Source\n in the Horizontal [m]",
+    #                                    title='Experimental Values',
+    #                                    default_value=34.0)
+
+    # unFilterSize = easyqt.get_int("Enter Size for Uniform Filter [Pixels]\n" +
+    #                               "    (Enter 1 to NOT use the filter)",
+    #                               title='Experimental Values',
+    #                               default_value=1)
+
+    # searchRegion = easyqt.get_int("Enter Size of Region for Searching\n the Peak [in Pixels]",
+    #                               title='Experimental Values',
+    #                               default_value=20)
+
+    os.chdir(originalDir)
+
+    # =============================================================================
+    # %% Crop
+    # =============================================================================
+
+    idx4crop = [0, -1, 0, -1]
+
+    # [colorlimit,
+    #  cmap] = wpu.plot_slide_colorbar(img,
+    #                                  title='SELECT COLOR SCALE,\n' +
+    #                                  'Raw Image, No Crop',
+    #                                  xlabel=r'x [$\mu m$ ]',
+    #                                  ylabel=r'y [$\mu m$ ]',
+    #                                  extent=wpu.extent_func(img,
+    #                                                         pixelSize)*1e6)
+
+    # idx4crop = wpu.graphical_roi_idx(img, verbose=True,
+    #                                  kargs4graph={'cmap': cmap,
+    #                                               'vmin': colorlimit[0],
+    #                                               'vmax': colorlimit[1]})
+
+    wpu.print_blue("MESSAGE: idx for cropping")
+    wpu.print_blue(idx4crop)
+
+    # =============================================================================
+    # %% Dark indexes
+    # =============================================================================
+
+    # darkRegionSelctionFlag = easyqt.get_yes_or_no('Do you want to select ' +
+    #                                               'region for dark calculation?\n' +
+    #                                               'Press ESC to use [0, 20, 0, 20]')
+    print(darkRegionSelctionFlag)
+    if darkRegionSelctionFlag:
+
+        idx4cropDark = wpu.graphical_roi_idx(img, verbose=True,
+                                             kargs4graph={'cmap': cmap,
+                                                          'vmin': colorlimit[0],
+                                                          'vmax': colorlimit[1]})
+    else:
+        idx4cropDark = [0, 20, 0, 20]
+
+    # dark_im = dxchange.read_tiff(listOfDataFiles[0])*0.0 + avgDark
+
+    img = wpu.crop_matrix_at_indexes(img, idx4crop)
+
+    # ==============================================================================
+    # %% Harmonic Periods
+    # ==============================================================================
+
+    if pattern == 'Diagonal':
+        period_harm_Vert = np.int(np.sqrt(2) * pixelSize / gratingPeriod * img.shape[0])
+        period_harm_Horz = np.int(np.sqrt(2) * pixelSize / gratingPeriod * img.shape[1])
+    elif pattern == 'Edge':
+        period_harm_Vert = np.int(2 * pixelSize / gratingPeriod * img.shape[0])
+        period_harm_Horz = np.int(2 * pixelSize / gratingPeriod * img.shape[1])
+
+    # Obtain harmonic periods from images
+
+    (period_harm_Vert,
+     _) = wgi.exp_harm_period(img, [period_harm_Vert, period_harm_Horz],
+                              harmonic_ij=['1', '0'],
+                              searchRegion=40,
+                              isFFT=False, verbose=True)
+
+    (_,
+     period_harm_Horz) = wgi.exp_harm_period(img, [period_harm_Vert,
+                                                   period_harm_Horz],
+                                             harmonic_ij=['0', '1'],
+                                             searchRegion=40,
+                                             isFFT=False, verbose=True)
+
+    wpu.log_this('Input folder: ' + data_dir,
+                 preffname=fname2save)
+    wpu.log_this('\nNumber of files : ' + str(nfiles))
+    wpu.log_this('Stride : ' + str(strideFile))
+    print(zvec_from)
+    wpu.log_this('Z distances is ' + zvec_from)
+
+    if zvec_from == 'Calculated':
+        wpu.log_this('Step zscan [mm] : {:.4g}'.format(step_z_scan * 1e3))
+        wpu.log_this('Start point zscan [mm] : {:.4g}'.format(startDist * 1e3))
+
+    wpu.log_this('Pixel Size [um] : {:.4g}'.format(pixelSize * 1e6))
+    wpu.log_this('Grating Period [um] : {:.4g}'.format(gratingPeriod * 1e6))
+    wpu.log_this('Grating Pattern : ' + pattern)
+    wpu.log_this('Crop idxs : ' + str(idx4crop))
+    wpu.log_this('Dark idxs : ' + str(idx4cropDark))
+
+    wpu.log_this('Vertical Source Distance: ' + str(sourceDistanceV))
+    wpu.log_this('Horizontal Source Distance: ' + str(sourceDistanceH))
+
+    wpu.log_this('Uniform Filter Size : {:d}'.format(unFilterSize))
+
+    wpu.log_this('Search Region : {:d}'.format(searchRegion))
+
+    # =============================================================================
+    # %% Calculate everything
+    # =============================================================================
+
+    # =============================================================================
+    # %% multiprocessing
+    # =============================================================================
+
+    ncpus = cpu_count()
+
+    wpu.print_blue("MESSAGE: %d cpu's available" % ncpus)
+
+    tzero = time.time()
+
+    p = Pool(ncpus - 2)
+
+    indexes = range(len(listOfDataFiles))
+    parameters = []
+
+    for i in indexes:
+        parameters.append([i, listOfDataFiles, zvec, idx4cropDark, idx4crop, period_harm_Vert, sourceDistanceV, period_harm_Horz, sourceDistanceH, searchRegion, unFilterSize])
+
+    res = p.map(_func, parameters)
+    p.close()
+
+    wpu.print_blue('MESSAGE: Time spent: {0:.3f} s'.format(time.time() - tzero))
+
+    '''
+    res = []
+    for i in range(len(listOfDataFiles)):
+        res.append(_func(i))
+    print(res)
+    '''
+    # =============================================================================
+    # %% Sorting the data
+    # =============================================================================
+
+    contrastV = np.asarray([x[0] for x in res])
+    contrastH = np.asarray([x[1] for x in res])
+
+    p0 = np.asarray([x[2] for x in res])
+    pv = np.asarray([x[3] for x in res])
+    ph = np.asarray([x[4] for x in res])
+
+    pattern_period_Vert_z = pixelSize / (pv[:, 0] - p0[:, 0]) * img.shape[0]
+    pattern_period_Horz_z = pixelSize / (ph[:, 1] - p0[:, 1]) * img.shape[1]
+
+    # =============================================================================
+    # %% Save csv file
+    # =============================================================================
+
+    outputfname = wpu.get_unique_filename(fname2save, 'csv')
+
+    wpu.save_csv_file(np.c_[zvec.T,
+                            contrastV.T,
+                            contrastH.T,
+                            pattern_period_Vert_z.T,
+                            pattern_period_Horz_z.T],
+                      outputfname,
+                      headerList=['z [m]',
+                                  'Vert Contrast',
+                                  'Horz Contrast',
+                                  'Vert Period [m]',
+                                  'Horz Period [m]'])
+
+    wpu.log_this('\nOutput file: ' + outputfname)
+
+    # =============================================================================
+    # %% Plot
+    # =============================================================================
+
+    # contrast vs z
+    fig = plt.figure(figsize=(10, 7))
+    plt.plot(zvec * 1e3, contrastV * 100, '-ko', label='Vert')
+    plt.plot(zvec * 1e3, contrastH * 100, '-ro', label='Hor')
+    plt.xlabel(r'Distance $z$  [mm]', fontsize=14)
+
+    plt.ylabel(r'Visibility $\times$ 100 [%]', fontsize=14)
+    plt.title('Visibility vs detector distance', fontsize=14, weight='bold')
+
+    plt.legend(fontsize=14, loc=0)
+
+    wpu.save_figs_with_idx(fname2save)
+    plt.show(block=False)
+
+    # =============================================================================
+    # %% Plot Harmonic position and calculate source distance
+    # =============================================================================
+    #    from wavepytools.diag.coherence.fit_singleGratingCoherence_z_scan import fit_period_vs_z
+    # xshi 20190719
+    from wavepytools.diag.coherence.fit_singleGratingCoherence_z_scan import fit_period_vs_z
+    (sourceDistance_from_fit_V,
+     patternPeriodFromData_V) = fit_period_vs_z(zvec, pattern_period_Vert_z,
+                                                contrastV,
+                                                direction='Vertical',
+                                                threshold=.002,
+                                                fname4graphs=fname2save)
+
+    (sourceDistance_from_fit_H,
+     patternPeriodFromData_H) = fit_period_vs_z(zvec, pattern_period_Horz_z,
+                                                contrastH,
+                                                direction='Horizontal',
+                                                threshold=0.0005,
+                                                fname4graphs=fname2save)
+
+
+if __name__ == "__main__":
+    print(sys.argv)
     freeze_support()
-    main()
+    if len(sys.argv) == 1:
+        main()
+    elif len(sys.argv) == 19:
+        data_dir = sys.argv[1]
+        zvec_from = sys.argv[2]
+        startDist = float(sys.argv[3])
+        step_z_scan = float(sys.argv[4])
+        image_per_point = int(sys.argv[5])
+        strideFile = int(sys.argv[6])
+        pixelSize = float(sys.argv[7])
+        gratingPeriod = float(sys.argv[8])
+        pattern = sys.argv[9]
+        sourceDistanceV = float(sys.argv[10])
+        sourceDistanceH = float(sys.argv[11])
+        unFilterSize = int(sys.argv[12])
+        searchRegion = int(sys.argv[13])
+        idx4crop = np.array(sys.argv[14:18], dtype=float)
+        darkRegionSelctionFlag = int(sys.argv[18])
+
+        main_terminal(data_dir, zvec_from, startDist, step_z_scan, image_per_point,
+                      strideFile, pixelSize, gratingPeriod, pattern,
+                      sourceDistanceV, sourceDistanceH, unFilterSize, searchRegion,
+                      idx4crop, darkRegionSelctionFlag)
+
+
