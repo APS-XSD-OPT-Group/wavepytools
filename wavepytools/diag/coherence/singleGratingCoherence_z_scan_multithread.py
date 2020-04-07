@@ -816,6 +816,7 @@ if __name__=="__main__":
     if len(sys.argv) == 1:
         main()
     elif len(sys.argv) == 19:
+        # run terminal mode
         data_dir = sys.argv[1]
         zvec_from = sys.argv[2]
         startDist = float(sys.argv[3])
