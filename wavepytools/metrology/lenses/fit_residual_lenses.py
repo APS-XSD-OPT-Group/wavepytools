@@ -1,3 +1,5 @@
+# TODO: refactor
+
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-  #
 # =============================================================================
@@ -14,6 +16,7 @@ if len(sys.argv) > 1 or True:
     matplotlib.use('Agg')
 
 from mpl_toolkits.mplot3d import Axes3D
+
 import matplotlib.pyplot as plt
 
 
