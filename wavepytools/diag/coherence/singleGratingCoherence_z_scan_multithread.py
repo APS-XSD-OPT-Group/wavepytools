@@ -793,9 +793,9 @@ def main_terminal(data_dir, zvec_from, startDist, step_z_scan, image_per_point,
     # =============================================================================
     # %% Plot Harmonic position and calculate source distance
     # =============================================================================
-#    from wavepytools.diag.coherence.fit_singleGratingCoherence_z_scan import fit_period_vs_z
+    from wavepytools.diag.coherence.fit_singleGratingCoherence_z_scan import fit_period_vs_z
 #xshi 20190719
-    from fit_singleGratingCoherence_z_scan import fit_period_vs_z
+    #from fit_singleGratingCoherence_z_scan import fit_period_vs_z
     (sourceDistance_from_fit_V,
      patternPeriodFromData_V) = fit_period_vs_z(zvec, pattern_period_Vert_z,
                                                 contrastV,
